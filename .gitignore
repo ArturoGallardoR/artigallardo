@@ -1,0 +1,12 @@
+# agent/session tooling
+.pi/
+.impeccable/
+
+# local build output (assembled by the Pages workflow)
+_site/
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
