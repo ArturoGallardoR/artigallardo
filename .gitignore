@@ -10,3 +10,6 @@ _site/
 Thumbs.db
 .vscode/
 .idea/
+
+# local-only drafts (not published, not tracked)
+mockup/v1-editorial.html

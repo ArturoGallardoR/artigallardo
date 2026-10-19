@@ -10,7 +10,6 @@ Portafolio de **Arti Gallardo** (IT & Automation Engineer / AI Systems) presenta
 |---|---|
 | `mockup/index.html` | Versión publicada (Win98 + Frutiger Aero). HTML/CSS/JS sin dependencias. |
 | `mockup/assets/` | Fondo de pantalla (WebP) y fuentes autoalojadas. |
-| `mockup/v1-editorial.html` | Concepto anterior (sistema de marca editorial). No se publica. |
 | `.github/workflows/pages.yml` | Despliegue a GitHub Pages en cada push a `main`. |
 
 ## Uso
