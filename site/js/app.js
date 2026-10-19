@@ -671,8 +671,12 @@
         <p class="tagline">${L(p.tagline)}</p>
         <p class="plain">${L(p.plain)}</p>
         <div class="actions"><button class="btn green" data-go="overview">${ui('viewResume')}</button><button class="btn ghost" data-go="contact">${ui('contactMe')}</button></div>`));
-      $('#appgrid').replaceChildren(frag([...SECTIONS.map((s) => ({ id: s.id, icon: s.icon, label: L(s.label) })), { id: 'terminal', icon: 'ic-term', label: ui('terminal'), dark: true }]
-        .map((a) => `<li><button class="app${a.dark ? ' dark' : ''}" data-go="${a.id}"><span class="tile">${svg(a.icon, '')}</span><span>${a.label}</span></button></li>`).join('')));
+      /* springboard grid + iOS-style dock with the four most useful destinations */
+      const DOCKED = ['overview', 'projects', 'contact', 'terminal'];
+      const apps = [...SECTIONS.map((s) => ({ id: s.id, icon: s.icon, label: L(s.label) })), { id: 'terminal', icon: 'ic-term', label: ui('terminal') }];
+      const appBtn = (a) => `<li><button class="app" data-app="${a.id}" data-go="${a.id}"><span class="tile">${svg(a.icon, '')}</span><span>${a.label}</span></button></li>`;
+      $('#appgrid').replaceChildren(frag(apps.filter((a) => !DOCKED.includes(a.id)).map(appBtn).join('')));
+      $('#dockList').replaceChildren(frag(DOCKED.map((id) => apps.find((a) => a.id === id)).map(appBtn).join('')));
     }
     function hideEl(el) {
       if (el.hidden) return;
@@ -687,6 +691,7 @@
     }
     function show(id) {
       const fromHome = currentId === '';
+      $('#phone').classList.toggle('in-page', id === 'terminal' || !!sec(id));
       if (id === 'terminal') {
         currentId = id; hideEl(page); showEl(termPage, fromHome);
         Terminal.boot();
@@ -696,6 +701,7 @@
         currentId = id;
         $('#mpageTitle').textContent = L(sec(id).label);
         $('#mpageBody').replaceChildren(frag(renderDoc(id)));
+        markDuplicateTitle();
         $('#mpageBody').scrollTop = 0;
         hideEl(termPage); showEl(page, fromHome);
         return;
@@ -707,7 +713,17 @@
       if (navN > 0) history.back();
       else { history.replaceState({ n: 0 }, '', location.pathname + location.search); show(''); }
     }
-    function rerender() { if (isMobile() && sec(currentId)) { $('#mpageTitle').textContent = L(sec(currentId).label); $('#mpageBody').replaceChildren(frag(renderDoc(currentId))); } }
+    /* the nav bar already shows the section name; hide the page heading when it just repeats it */
+    function markDuplicateTitle() {
+      const h1 = $('#mpageBody .doc > h1');
+      if (h1 && h1.textContent.trim() === $('#mpageTitle').textContent.trim()) h1.classList.add('dup');
+    }
+    function rerender() {
+      if (!isMobile() || !sec(currentId)) return;
+      $('#mpageTitle').textContent = L(sec(currentId).label);
+      $('#mpageBody').replaceChildren(frag(renderDoc(currentId)));
+      markDuplicateTitle();
+    }
     return { renderHome, show, back, rerender };
   })();
 
@@ -864,6 +880,47 @@
     }
   }
   mq.addEventListener('change', applyLayout);
+
+  /* --------- ambient: bubbles, wallpaper parallax, pointer-following glass highlight --------- */
+  (() => {
+    const fx = $('#fx');
+    function spawnBubbles() {
+      const count = isMobile() ? 5 : 10;
+      fx.replaceChildren(...Array.from({ length: count }, (_, i) => {
+        const b = h('span', 'bubble');
+        const size = 26 + Math.round(Math.random() * 64);
+        b.style.setProperty('--x', `${Math.round((i + Math.random()) * (100 / count))}%`);
+        b.style.setProperty('--s', `${size}px`);
+        b.style.setProperty('--d', `${26 + Math.round(Math.random() * 22)}s`);
+        b.style.setProperty('--delay', `${-Math.round(Math.random() * 40)}s`);
+        b.style.setProperty('--sway', `${Math.round((Math.random() - 0.5) * 120)}px`);
+        return b;
+      }));
+    }
+    let frame = 0;
+    let last = null;
+    function onMove(e) {
+      last = e;
+      if (frame) return;
+      frame = requestAnimationFrame(() => {
+        frame = 0;
+        const root = document.documentElement.style;
+        root.setProperty('--px', ((last.clientX / innerWidth) * 2 - 1).toFixed(3));
+        root.setProperty('--py', ((last.clientY / innerHeight) * 2 - 1).toFixed(3));
+        const glass = last.target.closest?.('.win, .task');
+        if (glass) {
+          const r = glass.getBoundingClientRect();
+          glass.style.setProperty('--gx', `${Math.round(last.clientX - r.left)}px`);
+          glass.style.setProperty('--gy', `${Math.round(last.clientY - r.top)}px`);
+        }
+      });
+    }
+    if (!reduce) {
+      spawnBubbles();
+      addEventListener('pointermove', (e) => { if (e.pointerType === 'mouse') onMove(e); }, { passive: true });
+      mq.addEventListener('change', spawnBubbles);
+    }
+  })();
 
   /* ═════════ start ═════════ */
   applyStatic();

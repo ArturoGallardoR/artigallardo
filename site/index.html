@@ -18,6 +18,10 @@
 </head>
 <body>
 
+<!-- ambient layers: wallpaper with pointer parallax + floating bubbles (generated in app.js) -->
+<div class="wall" aria-hidden="true"></div>
+<div class="fx" id="fx" aria-hidden="true"></div>
+
 <!-- icon sprite: hidden by size (display:none would break gradient references) -->
 <svg width="0" height="0" style="position:absolute" aria-hidden="true">
   <defs>
@@ -123,6 +127,7 @@
   <symbol id="g-close" viewBox="0 0 10 10"><path d="M1.5 1.5l7 7M8.5 1.5l-7 7" stroke="currentColor" stroke-width="2"/></symbol>
   <symbol id="g-back" viewBox="0 0 14 14"><path d="M8.5 2.5L4 7l4.5 4.5M4.5 7H12" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></symbol>
   <symbol id="g-fwd" viewBox="0 0 14 14"><path d="M5.5 2.5L10 7l-4.5 4.5M9.5 7H2" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="g-wifi" viewBox="0 0 16 12"><path d="M8 11.5l2.2-2.6a3.3 3.3 0 0 0-4.4 0zM3.6 6.8a6.6 6.6 0 0 1 8.8 0l1.4-1.6a8.8 8.8 0 0 0-11.6 0zM.8 3.6a10.8 10.8 0 0 1 14.4 0L16 2.2A12.6 12.6 0 0 0 0 2.2z" fill="currentColor"/></symbol>
 </svg>
 
 <!-- ═════════ DESKTOP ═════════ -->
@@ -210,7 +215,7 @@
 <!-- ═════════ MOBILE ═════════ -->
 <div class="phone" id="phone">
   <div class="statusbar">
-    <span class="brand">ArtiOS</span>
+    <span class="brand">ArtiOS <svg aria-hidden="true"><use href="#g-wifi"/></svg></span>
     <time class="clock"></time>
     <div class="seg" role="group" data-i18n-aria="language">
       <button data-set-lang="en" aria-pressed="true">EN</button>
@@ -222,6 +227,7 @@
     <section class="glasscard" id="homeCard"></section>
     <ul class="appgrid" id="appgrid"></ul>
   </main>
+  <nav class="dock" id="dock" data-i18n-aria="dock"><ul id="dockList"></ul></nav>
 
   <section class="mpage" id="mpage" hidden>
     <header class="navbar">

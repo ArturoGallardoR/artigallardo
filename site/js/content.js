@@ -38,6 +38,7 @@ window.CONTENT = {
     balloonTitle: { en: 'Not a terminal person?', es: '¿No eres de terminales?' },
     balloonText: { en: 'Switch to Easy view for a simple, readable résumé. You can come back anytime.', es: 'Cambia a la vista sencilla para leer el currículum fácilmente. Puedes volver cuando quieras.' },
     dismiss: { en: 'Dismiss', es: 'Cerrar aviso' },
+    dock: { en: 'Favourite apps', es: 'Apps favoritas' },
     shutDown: { en: 'Shut down...', es: 'Apagar el sistema...' },
     safeOff: { en: "It's now safe to turn off your computer.", es: 'Ahora puede apagar el equipo con seguridad.' },
     wake: { en: 'Click or press any key to turn it back on.', es: 'Haz clic o pulsa una tecla para volver a encenderlo.' },
