@@ -1,0 +1,11 @@
+{
+  "name": "artigallardo",
+  "private": true,
+  "description": "Arti Gallardo portfolio: Win98 + Frutiger Aero terminal, Easy view and mobile shell (static site in site/).",
+  "scripts": {
+    "test": "playwright test"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.56.0"
+  }
+}
