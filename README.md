@@ -1,29 +1,45 @@
 # artigallardo
 
-Portafolio de **Arti Gallardo** (IT & Automation Engineer / AI Systems) presentado como una terminal DOS dentro de un escritorio estilo Windows 98 con estética Frutiger Aero.
+Portfolio of **Arti Gallardo** (IT & Automation Engineer / AI Systems): a DOS terminal inside a Windows 98 desktop with a Frutiger Aero skin.
 
-**En vivo:** https://arturogallardor.github.io/artigallardo/
+**Live:** https://arturogallardor.github.io/artigallardo/
 
-## Estructura
+## Three ways to explore
 
-| Ruta | Qué es |
+| View | For | How to open |
+|---|---|---|
+| **Terminal** (desktop) | Technical visitors | Default. Commands: `help`, `whoami`, `experience`, `projects`, `open <project>`, `skills`, `education`, `about`, `contact`, `dir`, `cd`, `type`, `color XY`, `lang en/es`, `easy`. |
+| **Easy view** (desktop) | Recruiters and non-technical visitors | Balloon tip, *Easy view* desktop icon or toolbar button, Start menu, or the link `?view=easy`. Plain-language résumé, no commands. |
+| **Phone** (< 820px) | Mobile visitors | Automatic. Home screen with apps per section; browser Back works. Terminal is one of the apps. |
+
+Language: English by default, Spanish with the **EN/ES** controls or `?lang=es`. Both choices are remembered.
+
+Shareable links: `…/artigallardo/?view=easy&lang=es`, `…/artigallardo/#projects`.
+
+## Structure
+
+| Path | What |
 |---|---|
-| `mockup/index.html` | Versión publicada (Win98 + Frutiger Aero). HTML/CSS/JS sin dependencias. |
-| `mockup/assets/` | Fondo de pantalla (WebP) y fuentes autoalojadas. |
-| `.github/workflows/pages.yml` | Despliegue a GitHub Pages en cada push a `main`. |
+| `site/js/content.js` | **All content, both languages.** Edit this file to update the CV data. |
+| `site/js/app.js` | Window manager, terminal, Easy view, phone shell, routing, i18n. |
+| `site/css/aero.css` | Styles for desktop and mobile. |
+| `site/index.html` | Markup shell and SVG icon sprite. |
+| `site/assets/` | Wallpaper (WebP) and self-hosted fonts. |
+| `tests/portfolio.spec.js` | Playwright tests (desktop + mobile). |
+| `.github/workflows/pages.yml` | Runs the tests, then deploys `site/` to GitHub Pages on every push to `main`. |
 
-## Uso
+## Develop
 
-Comandos: `help`, `whoami`, `experience`, `projects`, `open <proyecto>`, `skills`, `education`, `about`, `contact`, además de `dir`, `cd`, `type`, `color XY`, `cls`, `ver` y `exit`. También se navega con el mouse: iconos del escritorio (doble clic), barra de herramientas y menú Inicio.
+Open `site/index.html` directly in a browser (no build step).
 
-Local: abre `mockup/index.html` directamente en el navegador.
+```bash
+npm ci
+npx playwright install chromium
+npm test
+```
 
-## Estado
+## Credits
 
-Mockup con datos verificados del CV; los campos marcados `[PENDIENTE]` se completan con el CV.
-
-## Créditos
-
-- **Selawik** — Microsoft, SIL Open Font License 1.1 (`mockup/assets/fonts/Selawik-LICENSE.txt`).
-- **WebPlus IBM VGA 8x16** — The Ultimate Oldschool PC Font Pack, VileR / int10h.org, CC BY-SA 4.0 (`mockup/assets/fonts/OldschoolPC-LICENSE.txt`).
-- Iconos SVG propios. Fondo de pantalla generado con IA.
+- **Selawik** — Microsoft, SIL Open Font License 1.1 (`site/assets/fonts/Selawik-LICENSE.txt`).
+- **WebPlus IBM VGA 8x16** — The Ultimate Oldschool PC Font Pack, VileR / int10h.org, CC BY-SA 4.0 (`site/assets/fonts/OldschoolPC-LICENSE.txt`).
+- Custom SVG icons. AI-generated wallpaper.

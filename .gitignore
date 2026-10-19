@@ -13,3 +13,6 @@ Thumbs.db
 
 # local-only drafts (not published, not tracked)
 mockup/v1-editorial.html
+node_modules/
+test-results/
+playwright-report/
