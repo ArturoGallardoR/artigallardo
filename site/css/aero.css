@@ -53,10 +53,12 @@ svg.i { width: 1em; height: 1em; flex: none; }
    Pointer parallax on the wallpaper and iridescent bubbles drifting up; both static under reduced motion. */
 .wall {
   position: fixed; inset: -28px; z-index: 0;
-  background: #3aa6ee url(../assets/wallpaper.webp) center / cover no-repeat;
+  background: #3aa6ee url(../assets/wallpaper-1920.webp) center / cover no-repeat;
+  background-image: image-set(url(../assets/wallpaper-1920.webp) 1x, url(../assets/wallpaper-2752.webp) 2x);
   transform: translate3d(calc(var(--px, 0) * -12px), calc(var(--py, 0) * -9px), 0);
   transition: transform 700ms var(--ease);
 }
+body.is-mobile .wall { background-image: url(../assets/wallpaper-mobile.webp); /* dedicated portrait crop, 1728x3072 */ }
 .fx {
   position: fixed; inset: 0; z-index: 0; pointer-events: none; overflow: hidden;
   transform: translate3d(calc(var(--px, 0) * 20px), calc(var(--py, 0) * 14px), 0);
@@ -91,7 +93,7 @@ svg.i { width: 1em; height: 1em; flex: none; }
   color: #fff; font-size: 13px; line-height: 1.15; text-align: center;
   text-shadow: 0 1px 2px rgba(0,25,60,.95), 0 0 8px rgba(0,40,90,.75);
 }
-.icon svg { width: 44px; height: 44px; filter: drop-shadow(0 3px 3px rgba(0,30,70,.35)); transition: transform 160ms var(--ease); }
+.icon svg { width: 50px; height: 50px; filter: drop-shadow(0 5px 5px rgba(0,30,70,.38)); transition: transform 160ms var(--ease); }
 .icon:hover { background: rgba(255,255,255,.14); border-color: rgba(255,255,255,.45); }
 .icon:hover svg { transform: translateY(-1px); }
 .icon[aria-pressed="true"] { background: linear-gradient(rgba(140,210,255,.45), rgba(60,150,230,.35)); border-color: rgba(255,255,255,.85); box-shadow: inset 0 1px 0 rgba(255,255,255,.6); }
@@ -499,33 +501,16 @@ details.tech dt { color: #4a5d75; }
 .glasscard .btn.green { background: linear-gradient(rgba(150,205,255,.75), rgba(80,150,245,.6) 50%, rgba(36,104,222,.7) 51%, rgba(88,156,250,.7)); }
 .glasscard .btn:active { background: linear-gradient(rgba(0,0,0,.25), rgba(0,0,0,.1)); }
 
-/* app icons: full-bleed colour, curved gloss, white label with shadow */
+/* app icons: glass orbs floating on the wallpaper, white label with shadow */
 .appgrid { list-style: none; margin: 0; padding: 0 2px; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 18px 4px; }
 .app {
   width: 100%; display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 0; border: 0; background: none;
   color: #fff; font-size: 12px; font-weight: 700; line-height: 1.15; text-align: center;
   text-shadow: 0 1px 2px rgba(0,0,0,.9), 0 0 6px rgba(0,20,60,.6);
 }
-.app .tile {
-  position: relative; width: 60px; height: 60px; border-radius: 13px; display: grid; place-items: center; overflow: hidden;
-  background: var(--tile); border: 1px solid rgba(0,0,0,.35);
-  box-shadow: 0 3px 7px rgba(0,0,0,.45), inset 0 0 0 1px rgba(255,255,255,.22), inset 0 -3px 6px rgba(0,0,0,.2);
-  transition: transform 140ms var(--ease), filter 140ms var(--ease);
-}
-.app .tile::after {
-  content: ""; position: absolute; left: -28%; right: -28%; top: -56%; height: 104%; border-radius: 50%; pointer-events: none;
-  background: linear-gradient(rgba(255,255,255,.72), rgba(255,255,255,.12));
-}
-.app .tile svg { position: relative; width: 40px; height: 40px; filter: drop-shadow(0 1px 1px rgba(0,0,0,.35)); }
-.app:active .tile { transform: scale(.92); filter: brightness(.7); }
-.app[data-app="overview"]   { --tile: linear-gradient(#a8ddff, #3393e8 55%, #1460bd); }
-.app[data-app="experience"] { --tile: linear-gradient(#8ff0dd, #1fae9c 55%, #0b7a70); }
-.app[data-app="projects"]   { --tile: linear-gradient(#9cc8ff, #3d6fd9 55%, #1d3f9e); }
-.app[data-app="skills"]     { --tile: linear-gradient(#c9b6ff, #7656e0 55%, #4a2fae); }
-.app[data-app="education"]  { --tile: linear-gradient(#fff1b8, #f2c443 55%, #d39612); }
-.app[data-app="about"]      { --tile: linear-gradient(#ffc2e6, #e44fa5 55%, #a81a6c); }
-.app[data-app="contact"]    { --tile: linear-gradient(#c8f59a, #59bf2c 55%, #2b8714); }
-.app[data-app="terminal"]   { --tile: linear-gradient(#5a6b84, #1d2a3d 55%, #0a111c); }
+.app .tile { width: 66px; height: 66px; display: grid; place-items: center; transition: transform 160ms var(--ease), filter 160ms var(--ease); }
+.app .tile svg { width: 66px; height: 66px; filter: drop-shadow(0 6px 7px rgba(0,25,70,.42)); }
+.app:active .tile { transform: scale(.9); filter: brightness(.85); }
 
 /* dock: iOS 4-style glass shelf in perspective, icons reflected on it */
 .dock { flex: none; position: relative; padding: 12px 8px calc(14px + env(safe-area-inset-bottom)); }

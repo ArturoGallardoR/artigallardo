@@ -18,7 +18,9 @@
   /* Only author-controlled templates go through frag(); user-typed text is always esc()'d or set via textContent. */
   const frag = (html) => document.createRange().createContextualFragment(html);
   const h = (tag, cls, text) => { const n = document.createElement(tag); if (cls) n.className = cls; if (text != null) n.textContent = text; return n; };
-  const svg = (id, cls = 'i') => `<svg class="${cls}" aria-hidden="true"><use href="#${id}"/></svg>`;
+  /* Inline-size icons (class "i", 18-26px) use the "-s" orb whose object fills the sphere;
+     desktop and phone app icons (cls '') use the full orb with caustic and highlight. */
+  const svg = (id, cls = 'i') => `<svg class="${cls}" aria-hidden="true"><use href="#${cls === 'i' ? `${id}-s` : id}"/></svg>`;
   const store = {
     get: (k) => { try { return localStorage.getItem('ag.' + k); } catch { return null; } },
     set: (k, v) => { try { localStorage.setItem('ag.' + k, v); } catch { /* private mode: preference just isn't remembered */ } },
@@ -674,7 +676,7 @@
       /* springboard grid + iOS-style dock with the four most useful destinations */
       const DOCKED = ['overview', 'projects', 'contact', 'terminal'];
       const apps = [...SECTIONS.map((s) => ({ id: s.id, icon: s.icon, label: L(s.label) })), { id: 'terminal', icon: 'ic-term', label: ui('terminal') }];
-      const appBtn = (a) => `<li><button class="app" data-app="${a.id}" data-go="${a.id}"><span class="tile">${svg(a.icon, '')}</span><span>${a.label}</span></button></li>`;
+      const appBtn = (a) => `<li><button class="app" data-go="${a.id}"><span class="tile">${svg(a.icon, '')}</span><span>${a.label}</span></button></li>`;
       $('#appgrid').replaceChildren(frag(apps.filter((a) => !DOCKED.includes(a.id)).map(appBtn).join('')));
       $('#dockList').replaceChildren(frag(DOCKED.map((id) => apps.find((a) => a.id === id)).map(appBtn).join('')));
     }

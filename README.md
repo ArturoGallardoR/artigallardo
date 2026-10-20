@@ -42,4 +42,5 @@ npm test
 
 - **Selawik** — Microsoft, SIL Open Font License 1.1 (`site/assets/fonts/Selawik-LICENSE.txt`).
 - **WebPlus IBM VGA 8x16** — The Ultimate Oldschool PC Font Pack, VileR / int10h.org, CC BY-SA 4.0 (`site/assets/fonts/OldschoolPC-LICENSE.txt`).
-- Custom SVG icons. AI-generated wallpaper.
+- Custom SVG glass-orb icons (full size + small `-s` variants for toolbars and menus).
+- AI-generated wallpaper, upscaled with EDSR super-resolution (OpenCV `dnn_superres`): `wallpaper-1920`/`-2752` for desktop (1x/2x) and a dedicated `wallpaper-mobile` portrait crop.
