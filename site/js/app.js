@@ -862,6 +862,15 @@
   const Phone = (() => {
     const page = $('#mpage'), termPage = $('#mterm');
     let currentId = '';
+    /* which page sits at each history step, so Back can name where it goes (iOS style) */
+    const visited = {};
+    let pendingHome = false;
+    const titleOf = (id) => (id === '' ? ui('home') : id === 'terminal' ? ui('terminal') : sec(id) ? L(sec(id).label) : ui('back'));
+    function updateNav() {
+      const prev = navN > 0 ? (navN - 1 in visited ? titleOf(visited[navN - 1]) : ui('back')) : ui('home');
+      $$('[data-mback]').forEach((b) => { b.textContent = prev; b.setAttribute('aria-label', `${ui('back')}: ${prev}`); });
+      $$('[data-mhome]').forEach((b) => { b.setAttribute('aria-label', ui('home')); b.title = ui('home'); });
+    }
 
     function renderHome() {
       const p = C.profile;
@@ -894,6 +903,13 @@
       if (h1 && h1.textContent.trim() === $('#mpageTitle').textContent.trim()) h1.classList.add('dup');
     }
     function show(id) {
+      /* the Home button rewinds history to its first entry; if that entry was a deep link, land on the springboard */
+      if (pendingHome) {
+        pendingHome = false;
+        if (id) { history.replaceState({ n: 0 }, '', location.pathname + location.search); id = ''; }
+      }
+      visited[navN] = id;
+      updateNav();
       const fromHome = currentId === '';
       $('#phone').classList.toggle('in-page', id === 'terminal' || !!sec(id));
       if (id === 'terminal') {
@@ -918,13 +934,19 @@
       if (navN > 0) history.back();
       else { history.replaceState({ n: 0 }, '', location.pathname + location.search); show(''); }
     }
+    /* straight back to the springboard from any depth */
+    function home() {
+      if (navN > 0) { pendingHome = true; history.go(-navN); }
+      else { history.replaceState({ n: 0 }, '', location.pathname + location.search); show(''); }
+    }
     function rerender() {
+      updateNav();
       if (!isMobile() || !sec(currentId)) return;
       $('#mpageTitle').textContent = L(sec(currentId).label);
       $('#mpageBody').replaceChildren(frag(renderDoc(currentId)));
       markDuplicateTitle();
     }
-    return { renderHome, show, back, rerender };
+    return { renderHome, show, back, home, rerender };
   })();
 
   /* --------- mobile lock screen: slide to unlock (once per session, skipped for deep links) --------- */
@@ -1121,6 +1143,7 @@
     if (t.closest('[data-lang-toggle]')) { setLang(lang === 'en' ? 'es' : 'en'); return; }
     const langS = t.closest('[data-set-lang]'); if (langS) { setLang(langS.dataset.setLang); return; }
     if (t.closest('[data-mback]')) { Phone.back(); return; }
+    if (t.closest('[data-mhome]')) { Phone.home(); return; }
     const p = t.closest('[data-project]'); if (p && !t.closest('#smList')) { openProject(p.dataset.project); return; }
     const g = t.closest('[data-go]'); if (g) { go(g.dataset.go); return; }
     if (t.closest('[data-setup-help]')) { Menu.close(); Setup.help(); return; }

@@ -315,6 +315,7 @@
   <symbol id="g-back" viewBox="0 0 14 14"><path d="M8.5 2.5L4 7l4.5 4.5M4.5 7H12" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></symbol>
   <symbol id="g-fwd" viewBox="0 0 14 14"><path d="M5.5 2.5L10 7l-4.5 4.5M9.5 7H2" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></symbol>
   <symbol id="g-wifi" viewBox="0 0 16 12"><path d="M8 11.5l2.2-2.6a3.3 3.3 0 0 0-4.4 0zM3.6 6.8a6.6 6.6 0 0 1 8.8 0l1.4-1.6a8.8 8.8 0 0 0-11.6 0zM.8 3.6a10.8 10.8 0 0 1 14.4 0L16 2.2A12.6 12.6 0 0 0 0 2.2z" fill="currentColor"/></symbol>
+  <symbol id="g-home" viewBox="0 0 20 18"><path d="M10 1.5L1.5 9h2.6v7.5h4.6v-5h2.6v5h4.6V9h2.6z" fill="currentColor" stroke="rgba(0,0,0,.35)" stroke-width=".6" stroke-linejoin="round"/></symbol>
   <symbol id="g-search" viewBox="0 0 16 16"><circle cx="6.5" cy="6.5" r="4.6" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M10 10l4.5 4.5" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></symbol>
   <symbol id="g-arrow" viewBox="0 0 24 16"><path d="M2 8h15M12 2.5L18 8l-6 5.5" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></symbol>
 </svg>
@@ -448,18 +449,18 @@
 
   <section class="mpage" id="mpage" hidden>
     <header class="navbar">
-      <button class="backbtn" data-mback data-i18n="home"></button>
+      <button class="backbtn" data-mback></button>
       <h1 id="mpageTitle"></h1>
-      <span></span>
+      <button class="homebtn" data-mhome><svg aria-hidden="true"><use href="#g-home"/></svg></button>
     </header>
     <div class="mpage-body" id="mpageBody"></div>
   </section>
 
   <section class="mpage mterm" id="mterm" hidden>
     <header class="navbar">
-      <button class="backbtn" data-mback data-i18n="home"></button>
+      <button class="backbtn" data-mback></button>
       <h1 data-i18n="terminal"></h1>
-      <span></span>
+      <button class="homebtn" data-mhome><svg aria-hidden="true"><use href="#g-home"/></svg></button>
     </header>
     <div class="mpage-body" id="mtermBody"></div>
   </section>

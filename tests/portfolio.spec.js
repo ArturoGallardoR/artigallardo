@@ -239,6 +239,35 @@ test.describe('mobile @mobile', () => {
     await expect(page.locator('#home')).toBeVisible();
   });
 
+  test('Back names the previous page and the Home button jumps straight to the springboard', async ({ page }) => {
+    await open(page);
+    await page.locator('.app', { hasText: 'Overview' }).tap();
+    await expect(page.locator('#mpage .backbtn')).toHaveText('Home');
+    await page.locator('#mpage .next-sec .btn').tap();
+    await expect(page.locator('#mpageTitle')).toHaveText('Experience');
+    await expect(page.locator('#mpage .backbtn')).toHaveText('Overview');
+    await page.locator('#mpage .next-sec .btn').tap();
+    await expect(page.locator('#mpageTitle')).toHaveText('Projects');
+
+    await page.locator('#mpage .homebtn').tap();
+    await expect(page.locator('#mpage')).toBeHidden();
+    await expect(page.locator('#home')).toBeVisible();
+    expect(new URL(page.url()).hash).toBe('');
+  });
+
+  test('Home works from a deep link and from the terminal app', async ({ page }) => {
+    await open(page, '', '#skills');
+    await page.locator('#mpage .homebtn').tap();
+    await expect(page.locator('#mpage')).toBeHidden();
+    expect(new URL(page.url()).hash).toBe('');
+
+    await page.locator('.app', { hasText: 'Terminal' }).tap();
+    await expect(page.locator('#mterm')).toBeVisible();
+    await page.locator('#mterm .homebtn').tap();
+    await expect(page.locator('#mterm')).toBeHidden();
+    await expect(page.locator('#home')).toBeVisible();
+  });
+
   test('a deep link opens that section directly and the in-app Back button goes home', async ({ page }) => {
     await open(page, '', '#projects');
     await expect(page.locator('#mpageTitle')).toHaveText('Projects');
