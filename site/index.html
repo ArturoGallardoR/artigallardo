@@ -337,28 +337,17 @@
         <button class="x" data-act="close" data-i18n-aria="close"><svg aria-hidden="true"><use href="#g-close"/></svg></button>
       </div>
     </header>
-    <!-- text-mode UI; moved into the phone's Terminal page on small screens -->
-    <div class="tui" id="termCore">
-      <div class="tui-cols">
-        <fieldset class="tui-panel tui-main">
-          <legend data-i18n="session"></legend>
-          <div class="tui-scroll" id="screen"><div id="log" role="log" aria-live="polite" aria-relevant="additions"></div></div>
-        </fieldset>
-        <fieldset class="tui-panel tui-side">
-          <legend class="c"><span data-i18n="sections"></span> · Shift+Tab ›</legend>
-          <ul class="tui-sections" id="tuiSections"></ul>
-          <div class="tui-help"><b data-i18n="inPlainWords"></b><p id="tuiHelp"></p></div>
-        </fieldset>
+    <!-- BIOS-style Setup Utility; moved into the phone's Terminal page on small screens -->
+    <div class="setup" id="termCore" tabindex="-1">
+      <div class="su-top">
+        <div class="su-title" data-i18n="setupTitle"></div>
+        <div class="su-tabs" id="suTabs" role="tablist"></div>
       </div>
-      <div class="tui-status"><button class="tui-link" data-go="overview" data-i18n="statusEasy"></button><span class="dot">·</span><button class="tui-link" data-lang-toggle data-i18n="statusLang"></button></div>
-      <fieldset class="tui-input">
-        <legend><span data-i18n="command"></span> · <label for="cmd" id="ps1">PS C:\Users\Arti&gt;</label></legend>
-        <div class="field" id="field">
-          <input id="cmd" type="text" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" enterkeyhint="go">
-          <span class="mirror" id="mirror" aria-hidden="true"></span>
-        </div>
-      </fieldset>
-      <div class="tui-keys" id="tuiKeys"></div>
+      <div class="su-body">
+        <div class="su-left" id="suLeft"></div>
+        <aside class="su-help"><div class="su-help-h" data-i18n="itemHelp"></div><p id="suHelp"></p><p class="su-hint" id="suHint"></p></aside>
+      </div>
+      <div class="su-keys" id="suKeys"></div>
     </div>
   </section>
 
@@ -460,9 +449,7 @@
       <h1 data-i18n="terminal"></h1>
       <span></span>
     </header>
-    <div class="mpage-body" id="mtermBody">
-      <div class="chips-bar" id="chipsBar" role="toolbar"></div>
-    </div>
+    <div class="mpage-body" id="mtermBody"></div>
   </section>
 
   <section class="lock" id="lock" hidden data-i18n-aria="lockScreen">

@@ -46,7 +46,6 @@
   const isBi = (v) => v && typeof v === 'object' && !Array.isArray(v) && 'en' in v && 'es' in v;
   const L = (v) => (isBi(v) ? v[lang] : v);
   const ui = (k) => L(C.ui[k]) ?? k;
-  const dos = (k, vars = {}) => String(L(C.dos[k])).replace(/\{(\w+)\}/g, (_, n) => vars[n] ?? '');
   const T = (v) => (v && v.tbd ? `<span class="todo">[${esc(ui('tbd'))}: ${esc(L(v.tbd))}]</span>` : L(v));
   const SECTIONS = C.sections;
   const sec = (id) => SECTIONS.find((s) => s.id === id);
@@ -61,7 +60,6 @@
     $('#taskbar').setAttribute('aria-label', ui('taskbar'));
     $('#icons').setAttribute('aria-label', ui('desktop'));
     $('#smList').setAttribute('aria-label', ui('startMenu'));
-    $('#chipsBar').setAttribute('aria-label', ui('quickCommands'));
     $('#winTerm').setAttribute('aria-label', ui('cmdTitle'));
     $('#winEasy').setAttribute('aria-label', ui('easyTitle'));
     $('#navpane').setAttribute('aria-label', ui('sections'));
@@ -78,10 +76,10 @@
     qs.set('lang', lang);
     history.replaceState(history.state, '', `${location.pathname}?${qs}${location.hash}`);
     applyStatic();
-    buildIcons(); Menu.build(); buildChips(); Phone.renderHome(); Clock.tick();
+    buildIcons(); Menu.build(); Phone.renderHome(); Clock.tick();
     Easy.render();
     Phone.rerender();
-    Terminal.relang();
+    Setup.relang();
   }
 
   /* --------- search index (Start menu + Easy view) --------- */
@@ -214,11 +212,11 @@
   /* desktop icons / Start menu: open a section in the user's current mode */
   function openSection(s) {
     if (mode === 'easy' || isMobile()) go(s.id);
-    else Terminal.run(s.cmd);
+    else Setup.show(s.id);
   }
   function openProject(slug) {
     if (mode === 'easy' || isMobile()) { pendingProject = slug; go('projects'); }
-    else Terminal.run(`open ${slug}`);
+    else Setup.show('projects', { item: slug, detail: true });
   }
   function revealPendingProject(root) {
     if (!pendingProject) return;
@@ -386,350 +384,165 @@
     return { show, render };
   })();
 
-  /* --------- terminal: text-mode UI in a PowerShell window --------- */
-  const Terminal = (() => {
-    const scroller = $('#screen'), log = $('#log'), input = $('#cmd'), mirror = $('#mirror'), field = $('#field'), ps1 = $('#ps1');
-    const state = { cwd: '', history: [], hIdx: 0, draft: '', busy: false, skip: false, booted: false, lastSection: null };
+  /* --------- terminal: BIOS-style Setup Utility (tabs, item list, item-specific help, key legend) --------- */
+  const Setup = (() => {
+    const root = $('#termCore'), tabsEl = $('#suTabs'), left = $('#suLeft');
+    const st = { tab: 'overview', idx: 0, detail: null, helpScreen: false, booted: false };
 
-    const run = (cmd, label, cls = 'run') => `<button class="${cls}" data-cmd="${esc(cmd)}">${label}</button>`;
-    const next = (...items) => `<div class="next">${items.map(([c, l]) => run(c, l || c)).join('')}</div>`;
-
-    /* dot-matrix "AG" monogram inside an elliptical ring (SVG, so it does not depend on the font) */
-    function monogram() {
-      const A = ['01110', '10001', '10001', '11111', '10001', '10001', '10001'];
-      const G = ['01110', '10001', '10000', '10111', '10001', '10001', '01110'];
-      const W = 25, H = 15, cx = (W - 1) / 2, cy = (H - 1) / 2, dots = [];
-      for (let y = 0; y < H; y++) {
-        for (let x = 0; x < W; x++) {
-          const d = Math.hypot((x - cx) / (W / 2), (y - cy) / (H / 2));
-          const ly = y - 4, ax = x - 6, gx = x - 14;
-          const letter = ly >= 0 && ly < 7 && ((ax >= 0 && ax < 5 && A[ly][ax] === '1') || (gx >= 0 && gx < 5 && G[ly][gx] === '1'));
-          if (letter || (d > 0.86 && d < 1.0)) dots.push(`<rect x="${x * 6 + 1}" y="${y * 8 + 2}" width="4.2" height="4.2"/>`);
-        }
-      }
-      return `<svg class="monogram" viewBox="0 0 ${W * 6} ${H * 8}" role="img" aria-label="${C.profile.name}">${dots.join('')}</svg>`;
-    }
-
-    /* files: PowerShell-style names; Length in DIR is the real byte size of each rendered document */
-    const ROOT = [
-      { name: 'Projects', dir: true },
-      { name: 'about.txt', cmd: 'about' },
-      { name: 'contact.txt', cmd: 'contact' },
-      { name: 'education.txt', cmd: 'education' },
-      { name: 'experience.txt', cmd: 'experience' },
-      { name: 'readme.txt', cmd: 'help' },
-      { name: 'skills.txt', cmd: 'skills' },
-      { name: 'whoami.exe', cmd: 'whoami' },
-    ];
-    const DIRS = { '': ROOT, Projects: C.projects.map((p) => ({ name: `${p.slug}.txt`, cmd: `open ${p.slug}` })) };
-    const DIR_ALIASES = { projects: 'Projects', proyectos: 'Projects', proyecto: 'Projects' };
-    const promptText = () => `PS C:\\Users\\Arti${state.cwd ? '\\' + state.cwd : ''}>`;
-    const normDir = (a) => {
-      const d = a.replace(/^(c:)?\\?(users\\)?(arti\\?)?/i, '').replace(/[\\/]$/, '').toLowerCase();
-      return d === '' ? '' : (DIR_ALIASES[d] ?? null);
-    };
-    function findFile(arg) {
-      const parts = arg.replace(/\//g, '\\').split('\\');
-      const name = parts.pop().toLowerCase();
-      const dir = parts.length ? normDir(parts.join('\\')) : state.cwd;
-      return dir === null ? undefined : (DIRS[dir] || []).find((f) => f.name.toLowerCase() === name || f.name.toLowerCase().replace(/\.\w+$/, '') === name);
-    }
-    const byteSize = (cmd) => { const d = h('div'); const [n, ...a] = cmd.split(' '); d.append(frag(COMMANDS[n](a))); return new TextEncoder().encode(d.textContent).length; };
     const kv = (rows) => `<dl class="kv">${rows.map(([k, v]) => `<dt>${k}</dt><dd>${v}</dd>`).join('')}</dl>`;
+    const bullets = (list) => `<ul class="su-ul">${list.map((x) => `<li>${x}</li>`).join('')}</ul>`;
+    const tabs = () => [...SECTIONS.map((s) => ({ id: s.id, label: s.id === 'overview' ? ui('tabMain') : L(s.label) })), { id: 'exit', label: ui('tabExit') }];
 
-    const COMMANDS = {
-      help: () => `
-        <p class="h">${ui('help')}</p>
-        ${kv([...SECTIONS.map((s) => [run(s.cmd, s.cmd, 'run bare'), L(s.desc)]), ...C.dos.helpRows.map(([c, d]) => [esc(c), L(d)])])}
-        <p class="dim">${dos('helpIntro')}</p>`,
-
-      whoami: () => {
-        const p = C.profile;
-        return `
-          <div class="who">${monogram()}
-            <div class="meta">
-              <p><span class="y b">${p.name}</span> <span class="dim">·</span> ${p.role.replace(' / ', ' <span class="dim">·</span> ')}</p>
-              ${kv([[ui('focus'), L(p.focus)], [ui('languages'), L(p.languages)], [ui('motto'), L(p.tagline)]])}
-            </div>
-          </div>
-          <p>${L(p.summary)}</p>
-          <ul class="tl">${C.highlights.map((x) => `<li>${L(x)}</li>`).join('')}</ul>
-          ${next(['projects', L(sec('projects').label)], ['experience', L(sec('experience').label)], ['contact', L(sec('contact').label)])}`;
-      },
-
-      experience: () => C.experience.map((e) => `
-        <div class="job"><p><span class="y b">${T(e.role)}</span> <span class="dim">·</span> ${T(e.org)} <span class="dim">· ${T(e.period)}</span></p>
-          <ul class="tl">${e.points.map((p) => `<li>${L(p)}</li>`).join('')}</ul></div>`).join('')
-        + next(['projects', L(sec('projects').label)], ['skills', L(sec('skills').label)]),
-
-      projects: () => `
-        <div class="rows">${C.projects.map((p) => `<button class="prow" data-cmd="open ${p.slug}" data-help="${esc(L(p.plain))}"><span>${L(p.title)}</span><span class="r">${L(p.result)}</span></button>`).join('')}</div>
-        <p class="dim">${dos('projectsHint')}</p>`,
-
-      open: ([arg]) => {
-        const a = (arg || '').toLowerCase().replace(/\.txt$/, '');
-        const p = C.projects.find((x) => x.slug === a);
-        if (!p) return `<p class="err">${arg ? dos('fileNotFound', { x: esc(arg) }) : dos('missingParam', { x: 'open signatures' })}</p>${next(['projects', L(sec('projects').label)])}`;
-        queueMicrotask(() => setHelp(L(p.plain)));
-        return `
-          <p><span class="y b">${L(p.title)}</span></p>
-          <p class="g">${L(p.result)}</p>
-          ${kv([[ui('problem'), L(p.problem)], [ui('built'), L(p.built)], [ui('myRole'), T(p.role)], [ui('tradeoff'), T(p.tradeoff)], [ui('tools'), p.stack]])}
-          ${next(['projects', dos('back')], ...C.projects.filter((x) => x !== p).slice(0, 2).map((x) => [`open ${x.slug}`, L(x.title)]))}`;
-      },
-
-      skills: () => `
-        ${kv(C.skills.map((g) => [L(g.name), g.items.map(L).join(' <span class="dim">·</span> ')]))}
-        <p class="dim">${dos('skillsHint')} ${run('projects', L(sec('projects').label))}</p>`,
-
-      education: () => kv([
-        ...C.education.map((e) => [e.period, `${L(e.title)}<br><span class="dim">${T(e.org)}</span>`]),
-        ...C.languages.map((l) => [L(l.name), L(l.level)]),
-      ]),
-
-      about: () => `
-        <p class="y b">${L(C.about.title)}</p><p>${T(C.about.text)}</p>
-        ${kv([[ui('atWork'), L(C.about.work).join(' · ')], [ui('offWork'), L(C.about.life).join(' · ')]])}`,
-
-      contact: () => `<p class="y b">${L(C.contact.title)}</p>${kv(C.contact.items.map((c) => [L(c.label), T(c.value)]))}`,
-
-      ver: () => `<p class="w">${dos('ver')}</p><p class="dim">${dos('credits')}</p>`,
-
-      dir: ([arg]) => {
-        const target = arg ? normDir(arg) : state.cwd;
-        const list = target === null ? null : DIRS[target];
-        if (!list) return `<p class="err">${dos('fileNotFound', { x: esc(arg) })}</p>`;
-        const now = new Date();
-        const stamp = `${now.toLocaleDateString(locale(), { month: '2-digit', day: '2-digit', year: 'numeric' })} ${now.toLocaleTimeString(locale(), { hour: '2-digit', minute: '2-digit' })}`;
-        const row = (mode, len, name, cmd) => `<button class="lsrow" data-cmd="${cmd}">${esc(`${mode.padEnd(10)}${stamp.padStart(22)}  ${String(len).padStart(8)} ${name}`)}</button>`;
-        const rows = list.map((f) => (f.dir ? row('d----', '', f.name, `cd ${f.name.toLowerCase()}`) : row('-a---', byteSize(f.cmd), f.name, f.cmd)));
-        const parent = target ? row('d----', '', '..', 'cd ..') : '';
-        return `<div class="ls">    ${dos('directory')} C:\\Users\\Arti${target ? '\\' + target : ''}\n\n${'Mode'.padEnd(10)}${'LastWriteTime'.padStart(22)}  ${'Length'.padStart(8)} Name\n${'----'.padEnd(10)}${'-------------'.padStart(22)}  ${'------'.padStart(8)} ----</div>${parent}${rows.join('')}`;
-      },
-
-      cd: ([arg]) => {
-        if (!arg) return `<p>${esc(promptText().slice(3, -1))}</p>`;
-        if (['..', '\\', '~', '/'].includes(arg)) { state.cwd = ''; return ''; }
-        const d = normDir(arg);
-        if (d !== null && DIRS[d]) { state.cwd = d; return ''; }
-        return `<p class="err">${dos('fileNotFound', { x: esc(arg) })}</p>`;
-      },
-
-      type: ([arg]) => {
-        if (!arg) return `<p class="err">${dos('missingParam', { x: 'type experience.txt' })}</p>`;
-        const f = findFile(arg);
-        if (!f) return `<p class="err">${dos('fileNotFound', { x: esc(arg) })}</p>`;
-        if (f.dir) return `<p class="err">${dos('isDir', { x: f.name, y: f.name.toLowerCase() })}</p>`;
-        if (f.name.endsWith('.exe')) return `<p class="err">${dos('isExe', { x: f.name, y: f.cmd })}</p>${next([f.cmd])}`;
-        const [n, ...a] = f.cmd.split(' ');
-        return COMMANDS[n](a);
-      },
-
-      lang: ([code]) => {
-        const c = (code || '').toLowerCase();
-        if (!LANGS.includes(c)) return `<p class="err">${dos('langUsage')}</p>`;
-        queueMicrotask(() => setLang(c));
-        return '';
-      },
-
-      easy: () => { queueMicrotask(() => go('overview')); return ''; },
-
-      sudo: (args) => (args.join(' ').toLowerCase() === 'hire arti'
-        ? `<p class="g">${dos('sudoOk')}</p>${next(['contact', dos('continueContact')])}`
-        : `<p class="err">${dos('sudoNo')}</p>`),
-    };
-    const ALIASES = {
-      ayuda: 'help', '?': 'help', man: 'help', readme: 'help', experiencia: 'experience', exp: 'experience', cv: 'experience', resume: 'whoami',
-      proyectos: 'projects', ls: 'dir', gci: 'dir', abrir: 'open', educacion: 'education', 'educación': 'education', acerca: 'about', sobremi: 'about',
-      contacto: 'contact', clear: 'cls', cat: 'type', gc: 'type', quiensoy: 'whoami', salir: 'exit', idioma: 'lang', gui: 'easy', sencilla: 'easy',
-    };
-    const ALL = [...Object.keys(COMMANDS), 'cls', 'exit'];
-
-    /* --- chrome: sections panel, help, keys legend --- */
-    function setHelp(text) { $('#tuiHelp').textContent = text; }
-    function buildSide() {
-      $('#tuiSections').replaceChildren(frag(SECTIONS.map((s) => `<li><button class="tui-sec" data-cmd="${s.cmd}" data-nav="${s.cmd}" data-help="${esc(L(s.plain))}">${L(s.label)}</button></li>`).join('')));
-      setActive(state.lastSection);
-      const s = SECTIONS.find((x) => x.cmd === state.lastSection) || SECTIONS[0];
-      setHelp(L(s.plain));
+    /* each tab is a list of items: label, plain-language help, and either a detail screen or an action */
+    function items(tab) {
+      const p = C.profile;
+      switch (tab) {
+        case 'overview': return [
+          { key: 'profile', label: ui('profile'), help: L(p.plain), detail: () => kv([[ui('fullName'), p.fullName], [ui('role'), p.role], [ui('focus'), L(p.focus)], [ui('languages'), L(p.languages)]]) },
+          { key: 'motto', label: ui('motto'), help: L(p.summary), detail: () => `<p class="y">${L(p.tagline)}</p><p>${L(p.summary)}</p>` },
+          { key: 'highlights', label: ui('highlights'), help: L(sec('overview').plain), detail: () => bullets(C.highlights.map(L)) },
+        ];
+        case 'experience': return C.experience.map((e, i) => ({
+          key: `job${i}`, label: `${T(e.role)} · ${T(e.org)}`, help: stripTags(L(e.points[0])),
+          detail: () => kv([[ui('role'), T(e.role)], ['', T(e.org)], ['', T(e.period)]]) + bullets(e.points.map(L)),
+        }));
+        case 'projects': return C.projects.map((x) => ({
+          key: x.slug, label: L(x.title), help: L(x.plain),
+          detail: () => `<p class="g">${L(x.result)}</p>${kv([[ui('problem'), L(x.problem)], [ui('built'), L(x.built)], [ui('myRole'), T(x.role)], [ui('tradeoff'), T(x.tradeoff)], [ui('tools'), x.stack]])}`,
+        }));
+        case 'skills': return C.skills.map((g, i) => ({ key: `skill${i}`, label: L(g.name), help: L(g.desc), detail: () => `<p>${L(g.desc)}</p>${bullets(g.items.map(L))}` }));
+        case 'education': return [
+          ...C.education.map((e, i) => ({ key: `edu${i}`, label: L(e.title), help: `${e.period} · ${stripTags(T(e.org))}`, detail: () => kv([[e.period, L(e.title)], ['', T(e.org)]]) })),
+          { key: 'langs', label: ui('languages'), help: L(p.languages), detail: () => kv(C.languages.map((l) => [L(l.name), L(l.level)])) },
+        ];
+        case 'about': return [
+          { key: 'story', label: L(C.about.title), help: L(sec('about').plain), detail: () => `<p>${T(C.about.text)}</p>` },
+          { key: 'work', label: ui('atWork'), help: L(C.about.work).join(' · '), detail: () => bullets(L(C.about.work)) },
+          { key: 'life', label: ui('offWork'), help: L(C.about.life).join(' · '), detail: () => bullets(L(C.about.life)) },
+        ];
+        case 'contact': return C.contact.items.map((c, i) => ({ key: `contact${i}`, label: L(c.label), help: stripTags(T(c.value)), detail: () => kv([[L(c.label), T(c.value)]]) }));
+        case 'exit': return [
+          { key: 'easy', label: ui('openEasy'), help: ui('exitEasyHelp'), action: () => go('overview') },
+          { key: 'lang', label: `${ui('language')}: ${ui('switchLang')}`, help: ui('exitLangHelp'), action: () => setLang(lang === 'en' ? 'es' : 'en') },
+          { key: 'close', label: ui('exitSetup'), help: ui('exitCloseHelp'), action: () => (isMobile() ? Phone.back() : WM.close('term')) },
+        ];
+        default: return [];
+      }
     }
-    const KEY_ACTIONS = {
-      Enter: () => { const v = input.value; input.value = ''; execute(v); renderMirror(); },
-      Tab: () => complete(),
-      'Shift+Tab': () => focusSections(),
-      '↑↓': () => focusSections(),
-      F1: () => typeAndRun('help'),
+    const current = () => items(st.tab);
+
+    function renderTabs() {
+      tabsEl.replaceChildren(frag(tabs().map((t) => `<button class="su-tab" role="tab" data-tab="${t.id}" aria-selected="${t.id === st.tab}" tabindex="-1">${t.label}</button>`).join('')));
+      $('.su-tab[aria-selected="true"]', tabsEl)?.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+    }
+    function renderHelp() {
+      const it = current()[st.idx];
+      const help = st.helpScreen ? ui('setupHelpTitle') : (it ? it.help : '');
+      let hint = ui(isMobile() ? 'tapOpen' : (it && it.action ? 'hintRun' : 'hintOpen'));
+      if (st.detail || st.helpScreen) hint = ui(isMobile() ? 'tapBack' : 'hintBack');
+      $('#suHelp').textContent = help;
+      $('#suHint').textContent = hint;
+    }
+    function renderLeft() {
+      const list = current();
+      if (st.helpScreen) {
+        left.replaceChildren(frag(`<button class="su-back" data-su="back">${ui('suBack')}</button><div class="su-detail"><p class="su-dh">${ui('setupHelpTitle')}</p>${kv(L(C.ui.setupHelp).map(([k, d]) => [k, d]))}</div>`));
+      } else if (st.detail) {
+        const it = list.find((x) => x.key === st.detail);
+        left.replaceChildren(frag(`<button class="su-back" data-su="back">${ui('suBack')}</button><div class="su-detail"><p class="su-dh">${it.label}</p>${it.detail()}</div>`));
+      } else {
+        left.replaceChildren(frag(`<ul class="su-list" role="listbox" aria-label="${esc(tabs().find((t) => t.id === st.tab).label)}">${list.map((it, i) => `<li><button class="su-item" role="option" data-i="${i}" aria-selected="${i === st.idx}" tabindex="${i === st.idx ? 0 : -1}">${it.label}</button></li>`).join('')}</ul>`));
+      }
+      left.scrollTop = 0;
+    }
+    function render() { renderTabs(); renderLeft(); renderHelp(); renderKeys(); }
+    function renderKeys() {
+      $('#suKeys').replaceChildren(frag(L(C.ui.keys).map(([k, d]) => `<button class="su-key" data-key="${k}"><b>${k}</b> ${d}</button>`).join('')));
+    }
+    const ownsFocus = () => root.contains(document.activeElement);
+    function focusSelection() {
+      const target = $('.su-item[aria-selected="true"]', left) || $('.su-back', left) || root;
+      target.focus({ preventScroll: true });
+    }
+
+    function select(i, { focus = true } = {}) {
+      const list = current();
+      if (st.detail || st.helpScreen || !list.length) return;
+      st.idx = (i + list.length) % list.length;
+      $$('.su-item', left).forEach((b, j) => { b.setAttribute('aria-selected', String(j === st.idx)); b.tabIndex = j === st.idx ? 0 : -1; });
+      $('.su-item[aria-selected="true"]', left)?.scrollIntoView({ block: 'nearest' });
+      renderHelp();
+      if (focus) focusSelection();
+    }
+    function setTab(id, { idx = 0 } = {}) {
+      st.tab = id; st.idx = idx; st.detail = null; st.helpScreen = false;
+      render(); if (ownsFocus() || !isMobile()) focusSelection();
+    }
+    function moveTab(dir) { const t = tabs(), i = t.findIndex((x) => x.id === st.tab); setTab(t[(i + dir + t.length) % t.length].id); }
+    function openItem() {
+      const it = current()[st.idx]; if (!it) return;
+      if (it.action) { it.action(); return; }
+      st.detail = it.key; renderLeft(); renderHelp(); focusSelection();
+    }
+    function back() {
+      if (!st.detail && !st.helpScreen) return;
+      st.detail = null; st.helpScreen = false; renderLeft(); renderHelp(); focusSelection();
+    }
+    function showHelp() { st.helpScreen = true; st.detail = null; renderLeft(); renderHelp(); focusSelection(); }
+
+    const ACTIONS = {
+      '↑↓': () => select(st.idx + 1), '←→': () => moveTab(1), Enter: openItem, Esc: back, F1: showHelp,
       F10: () => setLang(lang === 'en' ? 'es' : 'en'),
-      Esc: () => { input.value = ''; renderMirror(); input.focus({ preventScroll: true }); },
     };
-    function buildKeys() {
-      $('#tuiKeys').replaceChildren(frag(L(C.ui.keys).map(([k, d]) => `<button class="tui-key" data-key="${k}"><b>${k}</b> ${d}</button>`).join('<span class="dot">·</span>')));
-    }
-    $('#tuiKeys').addEventListener('click', (e) => { const b = e.target.closest('[data-key]'); if (b) KEY_ACTIONS[b.dataset.key]?.(); });
-    function focusSections() { ($('.tui-sec[aria-current="true"]') || $('.tui-sec'))?.focus(); }
-    $('#tuiSections').addEventListener('keydown', (e) => {
-      const all = $$('.tui-sec'), i = all.indexOf(document.activeElement);
-      if (e.key === 'ArrowDown' || e.key === 'ArrowUp') { e.preventDefault(); all[(i + (e.key === 'ArrowDown' ? 1 : -1) + all.length) % all.length].focus(); }
-      if (e.key === 'Escape' || (e.key === 'Tab' && !e.shiftKey)) { e.preventDefault(); input.focus({ preventScroll: true }); }
+    $('#suKeys').addEventListener('click', (e) => { const b = e.target.closest('[data-key]'); if (b) ACTIONS[b.dataset.key](); });
+    tabsEl.addEventListener('click', (e) => { const b = e.target.closest('[data-tab]'); if (b) setTab(b.dataset.tab); });
+    left.addEventListener('pointerover', (e) => { const b = e.target.closest('.su-item'); if (b && e.pointerType === 'mouse') select(Number(b.dataset.i), { focus: false }); });
+    left.addEventListener('click', (e) => {
+      if (e.target.closest('[data-su="back"]')) { back(); return; }
+      const b = e.target.closest('.su-item'); if (!b) return;
+      select(Number(b.dataset.i), { focus: false }); openItem();
     });
-    /* plain-language help follows the pointer/focus over sections and project rows */
-    const helpFrom = (e) => { const t = e.target.closest?.('[data-help]'); if (t && $('#termCore').contains(t)) setHelp(t.dataset.help); };
-    $('#termCore').addEventListener('pointerover', helpFrom);
-    $('#termCore').addEventListener('focusin', helpFrom);
 
-    function renderMirror() {
-      const v = input.value, pos = input.selectionStart ?? v.length;
-      if (!v) { mirror.replaceChildren(h('span', 'caret', '\u00a0'), h('span', 'ph', ui('placeholder'))); return; }
-      mirror.replaceChildren(document.createTextNode(v.slice(0, pos)), h('span', 'caret', v[pos] || '\u00a0'), document.createTextNode(v.slice(pos + 1)));
-    }
-    function closest(word) {
-      const d = (a, b) => {
-        const m = Array.from({ length: a.length + 1 }, (_, i) => [i]);
-        for (let j = 1; j <= b.length; j++) m[0][j] = j;
-        for (let i = 1; i <= a.length; i++) for (let j = 1; j <= b.length; j++) m[i][j] = Math.min(m[i - 1][j] + 1, m[i][j - 1] + 1, m[i - 1][j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1));
-        return m[a.length][b.length];
+    const active = () => (isMobile() ? !$('#mterm').hidden : WM.isActive('term'));
+    function onKey(e) {
+      if (!active() || e.target.closest?.('input, textarea')) return;
+      const k = e.key;
+      const map = {
+        ArrowDown: () => (st.detail || st.helpScreen ? left.scrollBy(0, 48) : select(st.idx + 1)),
+        ArrowUp: () => (st.detail || st.helpScreen ? left.scrollBy(0, -48) : select(st.idx - 1)),
+        ArrowRight: () => moveTab(1), ArrowLeft: () => moveTab(-1),
+        Home: () => select(0), End: () => select(current().length - 1),
+        Enter: () => { if (!st.detail && !st.helpScreen) openItem(); },
+        Escape: back, F1: showHelp, F10: ACTIONS.F10,
       };
-      const best = ALL.map((c) => [c, d(word, c)]).sort((a, b) => a[1] - b[1])[0];
-      return best && best[1] <= 2 ? best[0] : null;
+      if (!map[k]) return;
+      if (k === 'Enter' && e.target.closest?.('button') && !e.target.closest('.su-item')) return; /* let other buttons click */
+      e.preventDefault(); map[k]();
     }
-    function print(cmdText, html, { reveal = true } = {}) {
-      const entry = h('section', 'entry');
-      entry.append(h('div', 'echo', cmdText));
-      if (html) { const out = h('div', reveal && !reduce ? 'out reveal' : 'out'); out.append(frag(html)); entry.append(out); }
-      log.append(entry);
-      return entry;
-    }
-    function scrollToEntry(entry) {
-      const top = entry.getBoundingClientRect().top - scroller.getBoundingClientRect().top + scroller.scrollTop - 4;
-      scroller.scrollTo({ top, behavior: reduce ? 'auto' : 'smooth' });
-    }
-    function setActive(cmd) { $$('[data-nav]').forEach((b) => b.setAttribute('aria-current', String(b.dataset.nav === cmd))); }
+    document.addEventListener('keydown', onKey);
 
-    function execute(raw) {
-      const text = raw.trim();
-      if (text) state.history.push(text);
-      state.hIdx = state.history.length;
-      if (!text) return;
-      const [head, ...args] = text.split(/\s+/);
-      const name = ALIASES[head.toLowerCase()] || head.toLowerCase();
-      if (name === 'cls') { log.replaceChildren(); return; }
-      if (name === 'exit') { if (isMobile()) Phone.back(); else WM.close('term'); return; }
-
-      let html;
-      if (COMMANDS[name]) html = COMMANDS[name](args);
-      else {
-        const file = findFile(head);
-        if (file && !file.dir && !file.name.endsWith('.exe')) { const [n, ...a] = file.cmd.split(' '); html = COMMANDS[n](a); }
-        else {
-          const guess = closest(name);
-          html = `<p class="err">${dos('badCmd', { x: esc(head) })}</p>${guess ? next([guess, dos('didYouMean', { x: guess })]) : next(['help', dos('seeHelp')])}`;
-        }
-      }
-      const entry = print(text, html);
-      ps1.textContent = promptText();
-      const s = SECTIONS.find((x) => x.cmd === name);
-      if (s) { state.lastSection = s.cmd; setHelp(L(s.plain)); }
-      setActive(s ? s.cmd : name === 'open' ? 'projects' : state.lastSection);
-      scrollToEntry(entry);
+    /* public API */
+    function open(tab, { item, detail = false } = {}) {
+      st.tab = tab; st.helpScreen = false;
+      const list = items(tab);
+      const i = item ? Math.max(0, list.findIndex((x) => x.key === item)) : 0;
+      st.idx = i; st.detail = detail ? list[i]?.key ?? null : null;
+      render(); focusSelection();
     }
-
-    async function typeAndRun(cmd) {
-      if (state.busy) return;
-      state.busy = true; state.skip = false;
-      input.value = '';
-      for (const ch of cmd) {
-        input.value += ch; input.setSelectionRange(input.value.length, input.value.length); renderMirror();
-        if (!reduce && !state.skip) await sleep(24 + Math.random() * 30);
-      }
-      if (!reduce && !state.skip) await sleep(120);
-      execute(cmd);
-      input.value = ''; renderMirror();
-      state.busy = false;
-      if (!isMobile()) input.focus({ preventScroll: true });
-    }
-
-    function complete() {
-      const v = input.value, low = v.toLowerCase(), sp = low.indexOf(' ');
-      let pool;
-      if (sp > 0) {
-        const verb = ALIASES[low.slice(0, sp)] || low.slice(0, sp);
-        const ARGS = {
-          open: () => C.projects.map((p) => p.slug),
-          cd: () => ['..', 'projects'],
-          type: () => (DIRS[state.cwd] || []).filter((f) => !f.dir).map((f) => f.name),
-          lang: () => LANGS,
-        };
-        pool = (ARGS[verb] ? ARGS[verb]() : []).map((n) => v.slice(0, sp + 1) + n);
-      } else pool = ALL;
-      const hits = pool.filter((c) => c.toLowerCase().startsWith(low));
-      if (hits.length === 1) input.value = hits[0];
-      else if (hits.length > 1) {
-        const prefix = hits.reduce((a, b) => { let i = 0; while (i < a.length && a[i].toLowerCase() === b[i]?.toLowerCase()) i++; return a.slice(0, i); });
-        if (prefix.length > v.length) input.value = prefix;
-        else print(v, `<div class="next">${hits.map((x) => run(x, esc(x.split(' ').pop()), 'run bare')).join('')}</div>`, { reveal: false });
-      }
-      input.setSelectionRange(input.value.length, input.value.length);
-      renderMirror();
-    }
-
-    function printBoot() {
-      const b = h('div', 'boot');
-      const hint = dos(isMobile() ? 'bootHintMobile' : 'bootHint', { help: run('help', 'help', 'run bare') });
-      b.append(frag(`<p class="w">${dos('ver')}</p><p class="dim">(C) ${C.profile.name} ${new Date().getFullYear()}. ${hint}</p>`));
-      log.append(b);
-      renderMirror();
-    }
-    async function boot() {
-      if (state.booted) return;
-      state.booted = true;
-      printBoot();
-      if (!isMobile()) input.focus({ preventScroll: true });
-      if (!reduce) await sleep(450);
-      await typeAndRun('whoami');
-    }
-    /* public: run a command from anywhere (icons, Start menu, chips, links) */
-    async function runCmd(cmd) {
+    async function show(tab, opts) {
       if (isMobile()) { if (location.hash !== '#terminal') navigate('terminal'); }
       else { setMode('terminal'); await WM.open('term'); }
-      if (!state.booted) { state.booted = true; printBoot(); }
-      typeAndRun(cmd);
+      st.booted = true;
+      open(tab, opts);
     }
-    function relang() {
-      buildSide(); buildKeys(); renderMirror();
-      if (!state.booted) return;
-      log.replaceChildren();
-      printBoot();
-      if (state.lastSection) execute(state.lastSection);
-    }
-    function reset() { log.replaceChildren(); state.cwd = ''; state.booted = false; state.lastSection = null; ps1.textContent = promptText(); buildSide(); }
+    function boot() { if (st.booted) return; st.booted = true; render(); if (!isMobile()) focusSelection(); }
+    function relang() { if (st.idx >= current().length) st.idx = 0; render(); }
+    function reset() { st.tab = 'overview'; st.idx = 0; st.detail = null; st.helpScreen = false; st.booted = false; render(); }
 
-    input.addEventListener('keydown', (e) => {
-      if (state.busy) { if (e.key === 'Escape') state.skip = true; e.preventDefault(); return; }
-      if (e.key === 'Enter') { e.preventDefault(); KEY_ACTIONS.Enter(); }
-      else if (e.key === 'Tab' && e.shiftKey) { e.preventDefault(); focusSections(); }
-      else if (e.key === 'Tab') { e.preventDefault(); complete(); }
-      else if (e.key === 'ArrowUp') { e.preventDefault(); if (state.hIdx === state.history.length) state.draft = input.value; if (state.hIdx > 0) input.value = state.history[--state.hIdx]; renderMirror(); }
-      else if (e.key === 'ArrowDown') { e.preventDefault(); if (state.hIdx < state.history.length) { state.hIdx++; input.value = state.history[state.hIdx] ?? state.draft; } renderMirror(); }
-      else if (e.key === 'Escape') { e.preventDefault(); KEY_ACTIONS.Esc(); }
-      else if (e.key === 'l' && e.ctrlKey) { e.preventDefault(); execute('cls'); }
-      requestAnimationFrame(renderMirror);
-    });
-    ['input', 'select', 'click', 'keyup'].forEach((ev) => input.addEventListener(ev, renderMirror));
-    input.addEventListener('focus', () => { field.classList.add('focused'); renderMirror(); });
-    input.addEventListener('blur', () => field.classList.remove('focused'));
-    scroller.addEventListener('click', (e) => { if (!e.target.closest('button') && !String(getSelection()).length) input.focus({ preventScroll: true }); });
-    /* F1 / F10 while the terminal is the active surface */
-    document.addEventListener('keydown', (e) => {
-      if (e.key === 'Escape') state.skip = true;
-      const termActive = isMobile() ? !$('#mterm').hidden : WM.isActive('term');
-      if (!termActive || !['F1', 'F10'].includes(e.key)) return;
-      e.preventDefault(); KEY_ACTIONS[e.key]();
-    });
-
-    buildSide(); buildKeys(); renderMirror();
-    return { boot, run: runCmd, relang, reset };
+    render();
+    return { boot, show, relang, reset, help: () => show('overview').then(showHelp) };
   })();
-  WM.onFirstOpen('term', () => Terminal.boot());
+  WM.onFirstOpen('term', () => Setup.boot());
 
   /* --------- mobile phone shell --------- */
   const Phone = (() => {
@@ -771,7 +584,7 @@
       $('#phone').classList.toggle('in-page', id === 'terminal' || !!sec(id));
       if (id === 'terminal') {
         currentId = id; hideEl(page); showEl(termPage, fromHome);
-        Terminal.boot();
+        Setup.boot();
         return;
       }
       if (sec(id)) {
@@ -867,12 +680,6 @@
     $('#desktop').addEventListener('pointerdown', (e) => { if (!e.target.closest('.icon') && !e.target.closest('.win')) select(null); });
   })();
 
-  function buildChips() {
-    $('#chipsBar').replaceChildren(frag(
-      SECTIONS.map((s) => `<button class="chip" data-cmd="${s.cmd}">${s.cmd}</button>`).join('')
-      + `<button class="chip" data-cmd="help">help</button><button class="chip" data-cmd="cls">cls</button><button class="chip cta" data-go="overview">${ui('easyView')}</button>`));
-  }
-
   /* --------- Start menu (Windows 7): sections, links, search, shut down --------- */
   const Menu = (() => {
     const menu = $('#startmenu'), start = $('#start'), list = $('#smList'), input = $('#smSearch');
@@ -893,7 +700,7 @@
         `<li><button class="sml" data-go="overview">${ui('easyView')}</button></li>`,
         `<li><button class="sml" data-go="terminal">${ui('terminal')}</button></li>`,
         `<li><button class="sml" data-lang-toggle>${ui('language')}: ${ui('switchLang')}</button></li>`,
-        `<li><button class="sml" data-cmd="help">${ui('help')}</button></li>`,
+        `<li><button class="sml" data-setup-help>${ui('help')}</button></li>`,
       ].join('')));
     }
     const close = () => { if (menu.hidden) return; menu.hidden = true; start.setAttribute('aria-expanded', 'false'); input.value = ''; renderList(); };
@@ -944,7 +751,7 @@
       if (s.hidden) return;
       s.hidden = true;
       s.classList.remove('done');
-      Terminal.reset();
+      Setup.reset();
       if (mode === 'easy') go('overview'); else go('terminal');
     };
     s.addEventListener('click', wake);
@@ -1002,7 +809,7 @@
     if (t.closest('[data-mback]')) { Phone.back(); return; }
     const p = t.closest('[data-project]'); if (p && !t.closest('#smList')) { openProject(p.dataset.project); return; }
     const g = t.closest('[data-go]'); if (g) { go(g.dataset.go); return; }
-    const c = t.closest('[data-cmd]'); if (c) { Menu.close(); Terminal.run(c.dataset.cmd); }
+    if (t.closest('[data-setup-help]')) { Menu.close(); Setup.help(); }
   });
 
   /* --------- layout: desktop <-> mobile --------- */
@@ -1064,7 +871,7 @@
 
   /* --------- start --------- */
   applyStatic();
-  buildIcons(); Menu.build(); buildChips(); Phone.renderHome();
+  buildIcons(); Menu.build(); Phone.renderHome();
   Lock.maybeShow();
   document.fonts.ready.then(applyLayout);
 })();

@@ -7,7 +7,11 @@ const SITE = pathToFileURL(path.resolve(__dirname, '../site/index.html')).href;
 /** @param {import('@playwright/test').Page} page @param {string} [query] @param {string} [hash] */
 const open = (page, query = '', hash = '') => page.goto(`${SITE}${query}${hash}`);
 /** @param {import('@playwright/test').Page} page */
-const lastEntry = (page) => page.locator('#log .entry').last();
+const activeTab = (page) => page.locator('.su-tab[aria-selected="true"]');
+/** @param {import('@playwright/test').Page} page */
+const selected = (page) => page.locator('.su-item[aria-selected="true"]');
+/** @param {import('@playwright/test').Page} page */
+const detail = (page) => page.locator('.su-detail');
 
 test.describe('language', () => {
   test('defaults to English, switches to Spanish and remembers it after reload', async ({ page }) => {
@@ -22,7 +26,7 @@ test.describe('language', () => {
 
     await page.goto(SITE); // no query: preference must come from storage
     await expect(page.locator('html')).toHaveAttribute('lang', 'es');
-    await expect(page.locator('.tui-status')).toContainText('Idioma: ES');
+    await expect(activeTab(page)).toHaveText('Principal');
   });
 
   test('a shared ?view=easy&lang=es link opens the Easy view in Spanish', async ({ page }) => {
@@ -80,68 +84,73 @@ test.describe('non-technical visitor (desktop)', () => {
     await expect(page.locator('#p-endpoints details')).toHaveAttribute('open', '');
   });
 
-  test('Start menu search opens a project (in the terminal for terminal-mode visitors)', async ({ page }) => {
+  test('Easy view search treats typed text as text, never as HTML', async ({ page }) => {
+    await open(page, '?view=easy');
+    await page.locator('#easySearch').fill('<img src=x onerror=window.__pwned=1>');
+    await expect(page.locator('#easyPane')).toContainText('<img src=x');
+    expect(await page.locator('#easyPane img').count()).toBe(0);
+    expect(await page.evaluate(() => /** @type {any} */ (window).__pwned)).toBeUndefined();
+  });
+
+  test('Start menu search opens a project (in the Setup Utility for terminal-mode visitors)', async ({ page }) => {
     await open(page);
-    await expect(page.locator('#log .monogram')).toBeVisible();
+    await expect(selected(page)).toBeVisible();
     await page.locator('#start').click();
     await page.locator('#smSearch').fill('mcp');
     await expect(page.locator('#smList .smi').first()).toContainText('Odoo MCP server');
     await page.locator('#smSearch').press('Enter');
     await expect(page.locator('#startmenu')).toBeHidden();
-    await expect(lastEntry(page)).toContainText('Odoo MCP server');
+    await expect(activeTab(page)).toHaveText('Projects');
+    await expect(detail(page)).toContainText('Odoo MCP server');
   });
 });
 
-test.describe('terminal', () => {
-  test('boots with whoami, suggests the right command for a typo, and file navigation works', async ({ page }) => {
+test.describe('Setup Utility (terminal)', () => {
+  test('keyboard: arrows move between menus and items, Enter opens details, Esc goes back', async ({ page }) => {
     await open(page);
-    await expect(page.locator('#log .monogram')).toBeVisible();
-    await page.locator('#cmd').focus();
+    await expect(activeTab(page)).toHaveText('Main');
+    await expect(selected(page)).toHaveText('Profile');
 
-    await page.keyboard.type('skils');
-    await page.keyboard.press('Enter');
-    await expect(lastEntry(page)).toContainText('Did you mean skills?');
+    await page.keyboard.press('ArrowRight');
+    await page.keyboard.press('ArrowRight');
+    await expect(activeTab(page)).toHaveText('Projects');
+    await page.keyboard.press('ArrowDown');
+    await expect(selected(page)).toHaveText('Corporate email signature generator');
+    await expect(page.locator('#suHelp')).toContainText('on-brand email signature');
 
-    await page.keyboard.type('cd projects');
     await page.keyboard.press('Enter');
-    await expect(page.locator('#ps1')).toHaveText('PS C:\\Users\\Arti\\Projects>');
-    await page.keyboard.type('type signatures.txt');
-    await page.keyboard.press('Enter');
-    await expect(lastEntry(page)).toContainText('Corporate email signature generator');
+    await expect(detail(page)).toContainText('Up to 1 week');
+    await expect(detail(page)).toContainText('Google Sheets');
+    await page.keyboard.press('Escape');
+    await expect(selected(page)).toHaveText('Corporate email signature generator');
   });
 
-  test('sections panel runs a section and explains it in plain words', async ({ page }) => {
+  test('mouse: pointing moves the red bar and a click opens the item', async ({ page }) => {
     await open(page);
-    await expect(page.locator('#log .monogram')).toBeVisible();
-    await page.locator('.tui-sec', { hasText: 'Skills' }).click();
-    await expect(lastEntry(page).locator('.echo')).toHaveText('skills');
-    await expect(page.locator('.tui-sec[aria-current="true"]')).toHaveText('Skills');
-    await expect(page.locator('#tuiHelp')).toContainText('grouped by what they are for');
+    await page.locator('.su-tab', { hasText: 'Skills' }).click();
+    const item = page.locator('.su-item', { hasText: 'Applied AI' });
+    await item.hover();
+    await expect(item).toHaveAttribute('aria-selected', 'true');
+    await expect(page.locator('#suHelp')).toContainText('real business data');
+    await item.click();
+    await expect(detail(page)).toContainText('Claude Code');
+    await page.locator('.su-back').click();
+    await expect(page.locator('.su-list')).toBeVisible();
   });
 
-  test('renders typed text as text, never as HTML', async ({ page }) => {
+  test('F10 and F1 work while Setup is active, and the Exit menu offers the Easy view', async ({ page }) => {
     await open(page);
-    await expect(page.locator('#log .monogram')).toBeVisible();
-    await page.locator('#cmd').focus();
-    await page.keyboard.type('<img src=x onerror=window.__pwned=1>');
-    await page.keyboard.press('Enter');
-    await expect(lastEntry(page)).toContainText('<img src=x');
-    expect(await page.locator('#log img').count()).toBe(0);
-    expect(await page.evaluate(() => /** @type {any} */ (window).__pwned)).toBeUndefined();
-  });
-
-  test('lang command and F10 switch the whole interface', async ({ page }) => {
-    await open(page);
-    await expect(page.locator('#log .monogram')).toBeVisible();
-    await page.locator('#cmd').focus();
-    await page.keyboard.type('lang es');
-    await page.keyboard.press('Enter');
-    await expect(page.locator('html')).toHaveAttribute('lang', 'es');
-    await expect(page.locator('.tui-status')).toContainText('Idioma: ES');
-
-    await page.locator('#cmd').focus();
+    await expect(selected(page)).toBeVisible();
     await page.keyboard.press('F10');
-    await expect(page.locator('html')).toHaveAttribute('lang', 'en');
+    await expect(page.locator('html')).toHaveAttribute('lang', 'es');
+    await expect(activeTab(page)).toHaveText('Principal');
+    await page.keyboard.press('F1');
+    await expect(detail(page)).toContainText('Teclado y mouse');
+    await page.keyboard.press('Escape');
+
+    await page.locator('.su-tab', { hasText: 'Salir' }).click();
+    await page.locator('.su-item', { hasText: 'Abrir vista sencilla' }).click();
+    await expect(page.locator('#winEasy')).toBeVisible();
   });
 });
 
@@ -176,22 +185,23 @@ test.describe('mobile @mobile', () => {
     await expect(page.locator('#mpage')).toBeHidden();
   });
 
-  test('terminal app runs commands from tappable chips', async ({ page }) => {
+  test('terminal app shows the Setup Utility and opens items by tapping', async ({ page }) => {
     await open(page);
     await page.locator('.app', { hasText: 'Terminal' }).tap();
     await expect(page.locator('#mterm')).toBeVisible();
-    await expect(page.locator('#mterm .monogram')).toBeVisible();
-    await page.locator('.chip', { hasText: 'skills' }).tap();
-    await expect(lastEntry(page)).toContainText('Automation');
+    await page.locator('#mterm .su-tab', { hasText: 'Projects' }).tap();
+    await page.locator('#mterm .su-item', { hasText: 'Device management' }).tap();
+    await expect(page.locator('#mterm .su-detail')).toContainText('NinjaOne');
   });
 
   test('terminal app fits the phone width (no panel overflows the screen)', async ({ page }) => {
     await open(page, '', '#terminal');
-    await expect(page.locator('#mterm .monogram')).toBeVisible();
+    await expect(page.locator('#mterm .su-item').first()).toBeVisible();
     const vw = await page.evaluate(() => innerWidth);
-    for (const sel of ['#mterm .tui-main', '#mterm .tui-input', '#mterm .tui-status']) {
+    for (const sel of ['#mterm .su-tabs', '#mterm .su-left', '#mterm .su-help']) {
       const box = await page.locator(sel).boundingBox();
-      expect(box && box.x + box.width, sel).toBeLessThanOrEqual(vw);
+      /* 1px tolerance for sub-pixel layout; real overflows (like the 25px one this guards against) still fail */
+      expect(box && box.x + box.width, sel).toBeLessThanOrEqual(vw + 1);
     }
   });
 
