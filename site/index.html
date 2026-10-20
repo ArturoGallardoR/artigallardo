@@ -4,12 +4,12 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Arti Gallardo — IT & Automation Engineer / AI Systems</title>
-<meta name="description" content="Arti Gallardo · IT & Automation Engineer / AI Systems. Portfolio as a Windows 98 terminal with a Frutiger Aero skin, plus an easy view for everyone.">
+<meta name="description" content="Arti Gallardo · IT & Automation Engineer / AI Systems. Portfolio as a Windows 7 Aero desktop with a text-mode terminal, an easy view for everyone and an early-iPhone mobile shell.">
 <meta name="theme-color" content="#1a86dc">
 <!--
   Fonts (self-hosted, licences in assets/fonts/):
   · Selawik (Microsoft, SIL OFL 1.1) — open Segoe UI substitute.
-  · WebPlus IBM VGA 8x16 — The Ultimate Oldschool PC Font Pack by VileR, int10h.org (CC BY-SA 4.0).
+  · Inconsolata (SIL OFL 1.1) — Consolas-inspired monospace, subset for this site.
 -->
 <link rel="preload" as="image" href="assets/wallpaper-1920.webp" imagesrcset="assets/wallpaper-1920.webp 1x, assets/wallpaper-2752.webp 2x" media="(min-width: 820px)">
 <link rel="preload" as="image" href="assets/wallpaper-mobile.webp" media="(max-width: 819px)">
@@ -315,33 +315,50 @@
   <symbol id="g-back" viewBox="0 0 14 14"><path d="M8.5 2.5L4 7l4.5 4.5M4.5 7H12" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></symbol>
   <symbol id="g-fwd" viewBox="0 0 14 14"><path d="M5.5 2.5L10 7l-4.5 4.5M9.5 7H2" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></symbol>
   <symbol id="g-wifi" viewBox="0 0 16 12"><path d="M8 11.5l2.2-2.6a3.3 3.3 0 0 0-4.4 0zM3.6 6.8a6.6 6.6 0 0 1 8.8 0l1.4-1.6a8.8 8.8 0 0 0-11.6 0zM.8 3.6a10.8 10.8 0 0 1 14.4 0L16 2.2A12.6 12.6 0 0 0 0 2.2z" fill="currentColor"/></symbol>
+  <symbol id="g-search" viewBox="0 0 16 16"><circle cx="6.5" cy="6.5" r="4.6" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M10 10l4.5 4.5" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></symbol>
+  <symbol id="g-arrow" viewBox="0 0 24 16"><path d="M2 8h15M12 2.5L18 8l-6 5.5" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></symbol>
 </svg>
 
-<!-- ═════════ DESKTOP ═════════ -->
+<!-- ═════════ DESKTOP (Windows 7 Aero) ═════════ -->
 <div class="desktop" id="desktop">
   <ul class="icons" id="icons"></ul>
+
+  <aside class="gadget" id="gadget">
+    <svg class="clockface" id="clockface" viewBox="0 0 100 100" role="img"></svg>
+  </aside>
 
   <section class="win" id="winTerm" data-win="term" hidden>
     <header class="titlebar">
       <svg class="i" aria-hidden="true"><use href="#ic-term-s"/></svg>
       <span class="ttl" data-i18n="cmdTitle"></span>
-      <button class="ctrl" data-act="min" data-i18n-aria="minimize"><svg aria-hidden="true"><use href="#g-min"/></svg></button>
-      <button class="ctrl maxbtn" data-act="max" data-i18n-aria="maximize"><svg aria-hidden="true"><use href="#g-max"/></svg></button>
-      <button class="ctrl close" data-act="close" data-i18n-aria="close"><svg aria-hidden="true"><use href="#g-close"/></svg></button>
+      <div class="caps">
+        <button data-act="min" data-i18n-aria="minimize"><svg aria-hidden="true"><use href="#g-min"/></svg></button>
+        <button data-act="max" data-i18n-aria="maximize"><svg aria-hidden="true"><use href="#g-max"/></svg></button>
+        <button class="x" data-act="close" data-i18n-aria="close"><svg aria-hidden="true"><use href="#g-close"/></svg></button>
+      </div>
     </header>
-    <div class="toolbar" id="termToolbar" role="toolbar"></div>
-    <!-- term-core is moved into the mobile Terminal page on small screens -->
-    <div class="term-core" id="termCore">
-      <main class="screen" id="screen">
-        <div id="log" role="log" aria-live="polite" aria-relevant="additions"></div>
-        <div class="prompt-line">
-          <label for="cmd" id="ps1">C:\ARTI&gt;</label>
-          <div class="field" id="field">
-            <input id="cmd" type="text" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" enterkeyhint="go">
-            <span class="mirror" id="mirror" aria-hidden="true"></span>
-          </div>
+    <!-- text-mode UI; moved into the phone's Terminal page on small screens -->
+    <div class="tui" id="termCore">
+      <div class="tui-cols">
+        <fieldset class="tui-panel tui-main">
+          <legend data-i18n="session"></legend>
+          <div class="tui-scroll" id="screen"><div id="log" role="log" aria-live="polite" aria-relevant="additions"></div></div>
+        </fieldset>
+        <fieldset class="tui-panel tui-side">
+          <legend class="c"><span data-i18n="sections"></span> · Shift+Tab ›</legend>
+          <ul class="tui-sections" id="tuiSections"></ul>
+          <div class="tui-help"><b data-i18n="inPlainWords"></b><p id="tuiHelp"></p></div>
+        </fieldset>
+      </div>
+      <div class="tui-status"><button class="tui-link" data-go="overview" data-i18n="statusEasy"></button><span class="dot">·</span><button class="tui-link" data-lang-toggle data-i18n="statusLang"></button></div>
+      <fieldset class="tui-input">
+        <legend><span data-i18n="command"></span> · <label for="cmd" id="ps1">PS C:\Users\Arti&gt;</label></legend>
+        <div class="field" id="field">
+          <input id="cmd" type="text" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" enterkeyhint="go">
+          <span class="mirror" id="mirror" aria-hidden="true"></span>
         </div>
-      </main>
+      </fieldset>
+      <div class="tui-keys" id="tuiKeys"></div>
     </div>
   </section>
 
@@ -349,57 +366,69 @@
     <header class="titlebar">
       <svg class="i" aria-hidden="true"><use href="#ic-profile-s"/></svg>
       <span class="ttl" data-i18n="easyTitle"></span>
-      <button class="ctrl" data-act="min" data-i18n-aria="minimize"><svg aria-hidden="true"><use href="#g-min"/></svg></button>
-      <button class="ctrl maxbtn" data-act="max" data-i18n-aria="maximize"><svg aria-hidden="true"><use href="#g-max"/></svg></button>
-      <button class="ctrl close" data-act="close" data-i18n-aria="close"><svg aria-hidden="true"><use href="#g-close"/></svg></button>
+      <div class="caps">
+        <button data-act="min" data-i18n-aria="minimize"><svg aria-hidden="true"><use href="#g-min"/></svg></button>
+        <button data-act="max" data-i18n-aria="maximize"><svg aria-hidden="true"><use href="#g-max"/></svg></button>
+        <button class="x" data-act="close" data-i18n-aria="close"><svg aria-hidden="true"><use href="#g-close"/></svg></button>
+      </div>
     </header>
     <div class="addr">
       <button class="navbtn" id="easyBack" data-i18n-aria="back"><svg aria-hidden="true"><use href="#g-back"/></svg></button>
       <button class="navbtn" id="easyFwd" data-i18n-aria="forward"><svg aria-hidden="true"><use href="#g-fwd"/></svg></button>
       <div class="crumbs" id="crumbs"></div>
-      <button class="langbtn" data-lang-toggle><span class="code" data-i18n="langCode"></span><span data-i18n="switchLang"></span></button>
+      <label class="esearch"><span class="sr-only" data-i18n="searchEasy"></span><input id="easySearch" type="search" autocomplete="off"><svg aria-hidden="true"><use href="#g-search"/></svg></label>
     </div>
-    <div class="toolbar" role="toolbar">
-      <button class="tool" data-go="terminal"><svg class="i" aria-hidden="true"><use href="#ic-term-s"/></svg><span data-i18n="openTerminal"></span></button>
-      <span class="sep" aria-hidden="true"></span>
-      <button class="tool" data-go="contact"><svg class="i" aria-hidden="true"><use href="#ic-mail-s"/></svg><span data-i18n="contactMe"></span></button>
+    <div class="cmdbar" role="toolbar">
+      <button class="cbtn" data-go="terminal"><svg class="i" aria-hidden="true"><use href="#ic-term-s"/></svg><span data-i18n="openTerminal"></span></button>
+      <button class="cbtn" data-go="contact"><svg class="i" aria-hidden="true"><use href="#ic-mail-s"/></svg><span data-i18n="contactMe"></span></button>
+      <button class="cbtn" data-lang-toggle><svg class="i" aria-hidden="true"><use href="#ic-globe-s"/></svg><span data-i18n="switchLang"></span></button>
     </div>
     <div class="easy-body">
       <nav class="navpane" id="navpane"></nav>
       <main class="pane" id="easyPane" tabindex="-1"></main>
     </div>
+    <footer class="details" id="details"></footer>
   </section>
 </div>
 
 <nav class="taskbar" id="taskbar">
-  <button class="start" id="start" aria-expanded="false" aria-controls="startmenu"><svg aria-hidden="true"><use href="#ic-orb"/></svg><span data-i18n="start"></span></button>
+  <button class="orb" id="start" aria-expanded="false" aria-controls="startmenu" data-i18n-aria="start"><svg aria-hidden="true"><use href="#ic-orb"/></svg></button>
   <div class="tasks">
-    <button class="task" data-task="term" hidden><svg class="i" aria-hidden="true"><use href="#ic-term-s"/></svg><span data-i18n="cmdTask"></span></button>
-    <button class="task" data-task="easy" hidden><svg class="i" aria-hidden="true"><use href="#ic-profile-s"/></svg><span data-i18n="easyTask"></span></button>
+    <button class="task" data-task="easy" style="--glow: 90, 180, 255" data-i18n-aria="easyTask"><svg class="i" aria-hidden="true"><use href="#ic-profile-s"/></svg></button>
+    <button class="task" data-task="term" style="--glow: 85, 255, 255" data-i18n-aria="cmdTitle"><svg class="i" aria-hidden="true"><use href="#ic-term-s"/></svg></button>
   </div>
   <div class="tray">
     <button class="traylang" data-lang-toggle data-i18n="langCode"></button>
-    <time class="clock"></time>
+    <div class="tray-time"><time class="clock"></time><span class="date"></span></div>
   </div>
+  <button class="peekbtn" id="peek" data-i18n-aria="showDesktop"></button>
 </nav>
 
 <div class="startmenu" id="startmenu" hidden>
-  <div class="banner98" aria-hidden="true"><span><b>Arti</b>OS 98</span></div>
-  <ul id="menuList" role="menu"></ul>
+  <div class="sm-left">
+    <ul class="sm-list" id="smList" role="menu"></ul>
+    <label class="sm-search"><span class="sr-only" data-i18n="searchStart"></span><input id="smSearch" type="search" autocomplete="off"><svg aria-hidden="true"><use href="#g-search"/></svg></label>
+  </div>
+  <div class="sm-right">
+    <div class="sm-avatar" aria-hidden="true"><svg><use href="#ic-orb"/></svg></div>
+    <ul class="sm-links" id="smLinks"></ul>
+    <button class="sm-shut" id="shutBtn"><span data-i18n="shutDown"></span><svg aria-hidden="true"><use href="#ic-power-s"/></svg></button>
+  </div>
 </div>
 
 <aside class="balloon" id="balloon" role="status" hidden>
   <h2><svg class="i" aria-hidden="true"><use href="#ic-profile-s"/></svg><span data-i18n="balloonTitle"></span></h2>
   <p data-i18n="balloonText"></p>
-  <button class="btn green" data-go="overview" data-balloon-cta><span data-i18n="openEasy"></span></button>
+  <button class="btn green" data-go="overview"><span data-i18n="openEasy"></span></button>
   <button class="x" id="balloonX" data-i18n-aria="dismiss"><svg aria-hidden="true"><use href="#g-close"/></svg></button>
 </aside>
 
 <div class="shutdown" id="shutdown" hidden tabindex="-1">
-  <div><span data-i18n="safeOff"></span><small data-i18n="wake"></small></div>
+  <div class="sd-box"><span class="spinner" aria-hidden="true"></span><span data-i18n="shuttingDown"></span></div>
+  <p class="sd-wake" data-i18n="wake"></p>
 </div>
 
-<!-- ═════════ MOBILE ═════════ -->
+<!-- ═════════ MOBILE (early iPhone OS) ═════════ -->
 <div class="phone" id="phone">
   <div class="statusbar">
     <span class="brand">ArtiOS <svg aria-hidden="true"><use href="#g-wifi"/></svg></span>
@@ -433,6 +462,16 @@
     </header>
     <div class="mpage-body" id="mtermBody">
       <div class="chips-bar" id="chipsBar" role="toolbar"></div>
+    </div>
+  </section>
+
+  <section class="lock" id="lock" hidden data-i18n-aria="lockScreen">
+    <div class="lock-top"><time class="lock-time" id="lockTime"></time><span class="lock-date" id="lockDate"></span></div>
+    <div class="lock-bottom">
+      <div class="slider" id="slider">
+        <span class="slider-label" data-i18n="slideToUnlock"></span>
+        <button class="knob" id="knob" data-i18n-aria="unlock"><svg aria-hidden="true"><use href="#g-arrow"/></svg></button>
+      </div>
     </div>
   </section>
 </div>
