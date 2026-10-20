@@ -122,7 +122,7 @@ window.CONTENT = {
     tag: { en: 'AI / AUTOMATION / INFRASTRUCTURE', es: 'IA / AUTOMATIZACIÓN / INFRAESTRUCTURA' },
     tagline: { en: 'I build systems that earn their complexity.', es: 'Construyo sistemas que se ganan su complejidad.' },
     summary: {
-      en: 'I run IT operations and build the tools and integrations around them, mostly with coding agents. I start with plain rules and add AI only where it helps.',
+      en: 'I run IT operations and build internal tools and integrations for them, mostly with coding agents. I start with plain rules and add AI only where it helps.',
       es: 'Opero sistemas de TI y construyo las herramientas e integraciones que los rodean, casi siempre con agentes de programación. Empiezo con reglas simples y agrego IA sólo donde ayuda.',
     },
     plain: {
@@ -147,7 +147,7 @@ window.CONTENT = {
       org: { en: 'Kasa · remote', es: 'Kasa · remoto' },
       points: [
         { en: 'Building a Wi-Fi management system for all Kasa properties on <b>UniFi</b>, with a custom API to manage their networks.', es: 'Desarrollo un sistema de gestión de Wi-Fi para todas las propiedades de Kasa sobre <b>UniFi</b>, con una API propia para administrar sus redes.' },
-        { en: 'Work with coding agents (Claude Code, Pi, Oh My Pi, Orca, Jev by TypeSafe) and keep refining how I orchestrate several of them and set up the environments they run in.', es: 'Programo con agentes (Claude Code, Pi, Oh My Pi, Orca, Jev de TypeSafe) y sigo afinando cómo orquesto varios a la vez y cómo preparo los entornos donde trabajan.' },
+        { en: 'Work with coding agents (Claude Code, Pi, Oh My Pi, Orca, Jev by TypeSafe) and continue improving how I orchestrate multiple agents and set up the environments they run in.', es: 'Programo con agentes (Claude Code, Pi, Oh My Pi, Orca, Jev de TypeSafe) y sigo afinando cómo orquesto varios a la vez y cómo preparo los entornos donde trabajan.' },
         { en: 'Coordinate the work with the team in Notion and Slack.', es: 'Coordino el trabajo con el equipo en Notion y Slack.' },
       ],
     },
