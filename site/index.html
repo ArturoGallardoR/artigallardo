@@ -330,24 +330,36 @@
   <section class="win" id="winTerm" data-win="term" hidden>
     <header class="titlebar">
       <svg class="i" aria-hidden="true"><use href="#ic-term-s"/></svg>
-      <span class="ttl" data-i18n="cmdTitle"></span>
+      <span class="ttl" id="termTitle"></span>
       <div class="caps">
         <button data-act="min" data-i18n-aria="minimize"><svg aria-hidden="true"><use href="#g-min"/></svg></button>
         <button data-act="max" data-i18n-aria="maximize"><svg aria-hidden="true"><use href="#g-max"/></svg></button>
         <button class="x" data-act="close" data-i18n-aria="close"><svg aria-hidden="true"><use href="#g-close"/></svg></button>
       </div>
     </header>
-    <!-- BIOS-style Setup Utility; moved into the phone's Terminal page on small screens -->
-    <div class="setup" id="termCore" tabindex="-1">
-      <div class="su-top">
-        <div class="su-title" data-i18n="setupTitle"></div>
-        <div class="su-tabs" id="suTabs" role="tablist"></div>
+    <!-- terminal: a command prompt that runs the Setup Utility full-screen; moved into the phone's Terminal page on small screens -->
+    <div class="term" id="termCore">
+      <div class="shell" id="shell">
+        <div id="log" role="log" aria-live="polite" aria-relevant="additions"></div>
+        <div class="prompt-line">
+          <label for="cmd" id="ps1">C:\Users\Arti&gt;</label>
+          <div class="field" id="field">
+            <input id="cmd" type="text" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" enterkeyhint="go">
+            <span class="mirror" id="mirror" aria-hidden="true"></span>
+          </div>
+        </div>
       </div>
-      <div class="su-body">
-        <div class="su-left" id="suLeft"></div>
-        <aside class="su-help"><div class="su-help-h" data-i18n="itemHelp"></div><p id="suHelp"></p><p class="su-hint" id="suHint"></p></aside>
+      <div class="setup" id="setup" tabindex="-1" hidden>
+        <div class="su-top">
+          <div class="su-title" data-i18n="setupTitle"></div>
+          <div class="su-tabs" id="suTabs" role="tablist"></div>
+        </div>
+        <div class="su-body">
+          <div class="su-left" id="suLeft"></div>
+          <aside class="su-help"><div class="su-help-h" data-i18n="itemHelp"></div><p id="suHelp"></p><p class="su-hint" id="suHint"></p></aside>
+        </div>
+        <div class="su-keys" id="suKeys"></div>
       </div>
-      <div class="su-keys" id="suKeys"></div>
     </div>
   </section>
 

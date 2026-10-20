@@ -60,7 +60,7 @@
     $('#taskbar').setAttribute('aria-label', ui('taskbar'));
     $('#icons').setAttribute('aria-label', ui('desktop'));
     $('#smList').setAttribute('aria-label', ui('startMenu'));
-    $('#winTerm').setAttribute('aria-label', ui('cmdTitle'));
+    setTermTitle();
     $('#winEasy').setAttribute('aria-label', ui('easyTitle'));
     $('#navpane').setAttribute('aria-label', ui('sections'));
     $('#smSearch').placeholder = ui('searchStart');
@@ -79,7 +79,7 @@
     buildIcons(); Menu.build(); Phone.renderHome(); Clock.tick();
     Easy.render();
     Phone.rerender();
-    Setup.relang();
+    Setup.relang(); Shell.relang();
   }
 
   /* --------- search index (Start menu + Easy view) --------- */
@@ -384,10 +384,316 @@
     return { show, render };
   })();
 
-  /* --------- terminal: BIOS-style Setup Utility (tabs, item list, item-specific help, key legend) --------- */
+  /* --------- terminal title: "ArtiOS Terminal" or "ArtiOS Terminal - setup" while the program runs --------- */
+  const setTermTitle = () => {
+    const t = ui('cmdTitle') + ($('#setup').hidden ? '' : ` - ${ui('setupRunning')}`);
+    $('#termTitle').textContent = t;
+    $('#winTerm').setAttribute('aria-label', t);
+  };
+
+  /* --------- command prompt (cmd.exe style); hosts the Setup Utility as a full-screen program --------- */
+  const Shell = (() => {
+    const box = $('#shell'), log = $('#log'), input = $('#cmd'), mirror = $('#mirror'), field = $('#field'), ps1 = $('#ps1');
+    const st = { cwd: '', history: [], hIdx: 0, draft: '', busy: false, skip: false, booted: false, last: null };
+    const sh = (k, vars = {}) => String(L(C.shell[k])).replace(/\{(\w+)\}/g, (_, n) => vars[n] ?? '');
+    const run = (cmd, label) => `<button class="run" data-cmd="${esc(cmd)}">${label ?? esc(cmd)}</button>`;
+    const links = (...cmds) => `<p class="links">${cmds.map((c) => run(c)).join('')}</p>`;
+    const kv = (rows) => `<dl class="kv">${rows.map(([k, v]) => `<dt>${k}</dt><dd>${v}</dd>`).join('')}</dl>`;
+    const bullets = (list) => `<ul class="tl">${list.map((x) => `<li>${x}</li>`).join('')}</ul>`;
+
+    /* files; sizes in DIR are the real byte length of each rendered document */
+    const ROOT = [
+      { name: 'Projects', dir: true },
+      { name: 'about.txt', cmd: 'about' },
+      { name: 'contact.txt', cmd: 'contact' },
+      { name: 'education.txt', cmd: 'education' },
+      { name: 'experience.txt', cmd: 'experience' },
+      { name: 'readme.txt', cmd: 'help' },
+      { name: 'setup.exe', cmd: 'setup', exe: true },
+      { name: 'skills.txt', cmd: 'skills' },
+      { name: 'whoami.exe', cmd: 'whoami', exe: true },
+    ];
+    const DIRS = { '': ROOT, Projects: C.projects.map((p) => ({ name: `${p.slug}.txt`, cmd: `open ${p.slug}` })) };
+    const DIR_ALIASES = { projects: 'Projects', proyectos: 'Projects', proyecto: 'Projects' };
+    const promptText = () => `C:\\Users\\Arti${st.cwd ? '\\' + st.cwd : ''}>`;
+    const normDir = (a) => {
+      const d = a.replace(/^(c:)?\\?(users\\)?(arti\\?)?/i, '').replace(/[\\/]$/, '').toLowerCase();
+      return d === '' ? '' : (DIR_ALIASES[d] ?? null);
+    };
+    function findFile(arg) {
+      const parts = arg.replace(/\//g, '\\').split('\\');
+      const name = parts.pop().toLowerCase();
+      const dir = parts.length ? normDir(parts.join('\\')) : st.cwd;
+      return dir === null ? undefined : (DIRS[dir] || []).find((f) => f.name.toLowerCase() === name || f.name.toLowerCase().replace(/\.\w+$/, '') === name);
+    }
+    const textBytes = (html) => { const d = h('div'); d.append(frag(html)); return new TextEncoder().encode(d.textContent).length; };
+    const byteSize = (cmd) => {
+      if (cmd === 'setup') return Setup.bytes();
+      const [n, ...a] = cmd.split(' ');
+      return textBytes(COMMANDS[n](a));
+    };
+    /* `setup projects`, `setup proyectos`, `setup 3` all open the matching menu */
+    const tabFor = (arg) => {
+      if (!arg) return 'overview';
+      const a = fold(arg);
+      const s = SECTIONS.find((x) => x.id === a || fold(L(x.label)) === a || fold(x.label.en) === a || fold(x.label.es) === a);
+      return s ? s.id : 'overview';
+    };
+
+    const COMMANDS = {
+      help: () => `
+        <p class="y b">${ui('help')}</p>
+        ${kv([...SECTIONS.map((s) => [run(s.id === 'overview' ? 'whoami' : s.id), L(s.desc)]), ...C.shell.helpRows.map(([c, d]) => [esc(c), L(d)])])}
+        <p class="dim">${sh('helpIntro')}</p>`,
+
+      whoami: () => {
+        const p = C.profile;
+        return `
+          <p><span class="y b">${p.name}</span> <span class="dim">·</span> ${p.role}</p>
+          ${kv([[ui('focus'), L(p.focus)], [ui('languages'), L(p.languages)], [ui('motto'), L(p.tagline)]])}
+          <p>${L(p.summary)}</p>
+          ${bullets(C.highlights.map(L))}
+          ${links('projects', 'experience', 'contact')}`;
+      },
+
+      experience: () => C.experience.map((e) => `
+        <div class="job"><p><span class="y b">${T(e.role)}</span> <span class="dim">·</span> ${T(e.org)} <span class="dim">· ${T(e.period)}</span></p>
+          ${bullets(e.points.map(L))}</div>`).join('') + links('projects', 'skills'),
+
+      projects: () => `
+        <div class="rows">${C.projects.map((p) => `<button class="prow" data-cmd="open ${p.slug}"><span>${L(p.title)}</span><span class="y">${L(p.result)}</span></button>`).join('')}</div>
+        <p class="dim">${sh('projectsHint')}</p>`,
+
+      open: ([arg]) => {
+        const a = (arg || '').toLowerCase().replace(/\.txt$/, '');
+        const p = C.projects.find((x) => x.slug === a);
+        if (!p) return `<p>${arg ? sh('fileNotFound') : sh('syntax', { x: 'open signatures' })}</p>${links('projects')}`;
+        return `
+          <p class="y b">${L(p.title)}</p>
+          <p class="g">${L(p.result)}</p>
+          ${kv([[ui('problem'), L(p.problem)], [ui('built'), L(p.built)], [ui('myRole'), T(p.role)], [ui('tradeoff'), T(p.tradeoff)], [ui('tools'), p.stack]])}
+          ${links('projects', ...C.projects.filter((x) => x !== p).slice(0, 2).map((x) => `open ${x.slug}`))}`;
+      },
+
+      skills: () => kv(C.skills.map((g) => [L(g.name), g.items.map(L).join(' <span class="dim">·</span> ')])) + links('projects'),
+
+      education: () => kv([
+        ...C.education.map((e) => [e.period, `${L(e.title)}<br><span class="dim">${T(e.org)}</span>`]),
+        ...C.languages.map((l) => [L(l.name), L(l.level)]),
+      ]),
+
+      about: () => `
+        <p class="y b">${L(C.about.title)}</p><p>${T(C.about.text)}</p>
+        ${kv([[ui('atWork'), L(C.about.work).join(' · ')], [ui('offWork'), L(C.about.life).join(' · ')]])}`,
+
+      contact: () => `<p class="y b">${L(C.contact.title)}</p>${kv(C.contact.items.map((c) => [L(c.label), T(c.value)]))}`,
+
+      ver: () => `<p>${sh('ver')}</p><p class="dim">${sh('credits')}</p>`,
+
+      dir: ([arg]) => {
+        const target = arg ? normDir(arg) : st.cwd;
+        const list = target === null ? null : DIRS[target];
+        if (!list) return `<p>${sh('pathNotFound')}</p>`;
+        const now = new Date();
+        const stamp = `${now.toLocaleDateString(locale(), { month: '2-digit', day: '2-digit', year: 'numeric' })}  ${now.toLocaleTimeString(locale(), { hour: '2-digit', minute: '2-digit' })}`;
+        const files = list.filter((f) => !f.dir);
+        const sizes = new Map(files.map((f) => [f, byteSize(f.cmd)]));
+        const total = [...sizes.values()].reduce((x, y) => x + y, 0);
+        const fmt = (n) => n.toLocaleString(locale());
+        const row = (f) => `<button class="lsrow" data-cmd="${f.dir ? `cd ${f.name.toLowerCase()}` : f.cmd}">${esc(`${stamp}    ${f.dir ? '<DIR>         ' : fmt(sizes.get(f)).padStart(14)} ${f.name}`)}</button>`;
+        const parent = target ? `<button class="lsrow" data-cmd="cd ..">${esc(`${stamp}    <DIR>          ..`)}</button>` : '';
+        const dirCount = list.filter((f) => f.dir).length + (target ? 1 : 0);
+        return `<div class="ls">${sh('volume')}\n${sh('dirOf')} C:\\Users\\Arti${target ? '\\' + target : ''}\n\n</div>${parent}${list.map(row).join('')}<div class="ls">${String(files.length).padStart(16)} ${sh('files')} ${fmt(total).padStart(14)} bytes\n${String(dirCount).padStart(16)} ${sh('dirs')}</div>`;
+      },
+
+      cd: ([arg]) => {
+        if (!arg) return `<p>${esc(promptText().slice(0, -1))}</p>`;
+        if (['..', '\\', '~', '/'].includes(arg)) { st.cwd = ''; return ''; }
+        const d = normDir(arg);
+        if (d !== null && DIRS[d]) { st.cwd = d; return ''; }
+        return `<p>${sh('pathNotFound')}</p>`;
+      },
+
+      type: ([arg]) => {
+        if (!arg) return `<p>${sh('syntax', { x: 'type experience.txt' })}</p>`;
+        const f = findFile(arg);
+        if (!f) return `<p>${sh('fileNotFound')}</p>`;
+        if (f.dir) return `<p>${sh('pathNotFound')}</p>`;
+        if (f.exe) return `<p>${sh('isExe', { x: f.name, y: f.cmd })}</p>${links(f.cmd)}`;
+        const [n, ...a] = f.cmd.split(' ');
+        return COMMANDS[n](a);
+      },
+
+      sudo: (args) => (args.join(' ').toLowerCase() === 'hire arti'
+        ? `<p class="g">${sh('sudoOk')}</p>${links('contact')}`
+        : `<p>${sh('sudoNo')}</p>`),
+    };
+    const ALIASES = {
+      ayuda: 'help', '?': 'help', man: 'help', readme: 'help', experiencia: 'experience', exp: 'experience', cv: 'experience', resume: 'whoami',
+      proyectos: 'projects', ls: 'dir', abrir: 'open', educacion: 'education', 'educación': 'education', acerca: 'about', sobremi: 'about',
+      contacto: 'contact', clear: 'cls', cat: 'type', quiensoy: 'whoami', salir: 'exit', idioma: 'lang', gui: 'easy', sencilla: 'easy',
+      menu: 'setup', 'setup.exe': 'setup', 'whoami.exe': 'whoami', bios: 'setup',
+    };
+    /* commands with side effects run only when typed/clicked, never while DIR measures file sizes */
+    const ACTIONS = {
+      setup: ([arg]) => { Setup.launch(tabFor(arg)); return ''; },
+      lang: ([code]) => {
+        const c = (code || '').toLowerCase();
+        if (!LANGS.includes(c)) return `<p>${sh('langUsage')}</p>`;
+        queueMicrotask(() => setLang(c));
+        return '';
+      },
+      easy: () => { queueMicrotask(() => go('overview')); return ''; },
+    };
+    const ALL = [...Object.keys(COMMANDS), ...Object.keys(ACTIONS), 'cls', 'exit'];
+
+    function renderMirror() {
+      const v = input.value, pos = input.selectionStart ?? v.length;
+      mirror.replaceChildren(document.createTextNode(v.slice(0, pos)), h('span', 'caret', v[pos] || '\u00a0'), document.createTextNode(v.slice(pos + 1)));
+    }
+    function closest(word) {
+      const d = (a, b) => {
+        const m = Array.from({ length: a.length + 1 }, (_, i) => [i]);
+        for (let j = 1; j <= b.length; j++) m[0][j] = j;
+        for (let i = 1; i <= a.length; i++) for (let j = 1; j <= b.length; j++) m[i][j] = Math.min(m[i - 1][j] + 1, m[i][j - 1] + 1, m[i - 1][j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1));
+        return m[a.length][b.length];
+      };
+      const best = ALL.map((c) => [c, d(word, c)]).sort((a, b) => a[1] - b[1])[0];
+      return best && best[1] <= 2 ? best[0] : null;
+    }
+    function print(cmdText, html) {
+      const entry = h('section', 'entry');
+      entry.append(h('div', 'cmdline', promptText() + cmdText));
+      if (html) { const out = h('div', 'out'); out.append(frag(html)); entry.append(out); }
+      log.append(entry);
+      return entry;
+    }
+    function note(html) { const p = h('div', 'note'); p.append(frag(html)); log.append(p); box.scrollTop = box.scrollHeight; }
+    function scrollToEntry(entry) {
+      const top = entry.getBoundingClientRect().top - box.getBoundingClientRect().top + box.scrollTop - 6;
+      box.scrollTo({ top, behavior: reduce ? 'auto' : 'smooth' });
+    }
+
+    function execute(raw) {
+      const text = raw.trim();
+      if (text) st.history.push(text);
+      st.hIdx = st.history.length;
+      if (!text) { print('', ''); return; }
+      const [head, ...args] = text.split(/\s+/);
+      const name = ALIASES[head.toLowerCase()] || head.toLowerCase();
+      if (name === 'cls') { log.replaceChildren(); return; }
+      if (name === 'exit') { print(text, ''); if (isMobile()) Phone.back(); else WM.close('term'); return; }
+
+      let html;
+      if (ACTIONS[name]) html = ACTIONS[name](args);
+      else if (COMMANDS[name]) html = COMMANDS[name](args);
+      else {
+        const file = findFile(head);
+        if (file && !file.dir) { const [n, ...a] = file.cmd.split(' '); html = (ACTIONS[n] || COMMANDS[n])(a); }
+        else {
+          const guess = closest(name);
+          html = `<p>${sh('badCmd', { x: esc(head) })}</p>${guess ? `<p>${sh('didYouMean', { x: run(guess) })}</p>` : links('help')}`;
+        }
+      }
+      const entry = print(text, html);
+      ps1.textContent = promptText();
+      if (COMMANDS[name] && name !== 'cd') st.last = text;
+      scrollToEntry(entry);
+    }
+
+    async function typeAndRun(cmd) {
+      if (st.busy) return;
+      st.busy = true; st.skip = false;
+      input.value = '';
+      for (const ch of cmd) {
+        input.value += ch; input.setSelectionRange(input.value.length, input.value.length); renderMirror();
+        if (!reduce && !st.skip) await sleep(40 + Math.random() * 40);
+      }
+      if (!reduce && !st.skip) await sleep(160);
+      execute(cmd);
+      input.value = ''; renderMirror();
+      st.busy = false;
+      if (!isMobile() && $('#setup').hidden) input.focus({ preventScroll: true });
+    }
+
+    function complete() {
+      const v = input.value, low = v.toLowerCase(), sp = low.indexOf(' ');
+      let pool;
+      if (sp > 0) {
+        const verb = ALIASES[low.slice(0, sp)] || low.slice(0, sp);
+        const ARGS = {
+          open: () => C.projects.map((p) => p.slug),
+          cd: () => ['..', 'projects'],
+          type: () => (DIRS[st.cwd] || []).filter((f) => !f.dir).map((f) => f.name),
+          setup: () => SECTIONS.map((s) => s.id),
+          lang: () => LANGS,
+        };
+        pool = (ARGS[verb] ? ARGS[verb]() : []).map((n) => v.slice(0, sp + 1) + n);
+      } else pool = ALL;
+      const hits = pool.filter((c) => c.toLowerCase().startsWith(low));
+      if (hits.length === 1) input.value = hits[0];
+      else if (hits.length > 1) {
+        const prefix = hits.reduce((a, b) => { let i = 0; while (i < a.length && a[i].toLowerCase() === b[i]?.toLowerCase()) i++; return a.slice(0, i); });
+        if (prefix.length > v.length) input.value = prefix;
+        else print(v, `<p class="links">${hits.map((x) => run(x, esc(x.split(' ').pop()))).join('')}</p>`);
+      }
+      input.setSelectionRange(input.value.length, input.value.length);
+      renderMirror();
+    }
+
+    function printBanner() {
+      note(`<p>${sh('ver')}</p><p>${sh('copyright', { year: new Date().getFullYear() })}</p>`);
+      renderMirror();
+    }
+    /* banner only: used when something else (icons, Start menu) is about to launch Setup itself */
+    function prime() { if (st.booted) return; st.booted = true; printBanner(); }
+    /* first open: banner, then the prompt types `setup` so the menus open like a program */
+    async function boot() {
+      if (st.booted) return;
+      prime();
+      if (!reduce) await sleep(420);
+      await typeAndRun('setup');
+    }
+    /* run a command from a link inside the console */
+    function runCmd(cmd) { typeAndRun(cmd); }
+    function onSetupClosed() {
+      note(`<p class="dim">${sh('closed', { help: run('help'), setup: run('setup') })}</p>`);
+      if (!isMobile()) input.focus({ preventScroll: true });
+    }
+    function relang() {
+      renderMirror();
+      if (!st.booted) return;
+      log.replaceChildren();
+      printBanner();
+      if (st.last && $('#setup').hidden) execute(st.last);
+    }
+    function reset() { log.replaceChildren(); st.cwd = ''; st.booted = false; st.last = null; ps1.textContent = promptText(); }
+
+    input.addEventListener('keydown', (e) => {
+      if (st.busy) { if (e.key === 'Escape') st.skip = true; e.preventDefault(); return; }
+      if (e.key === 'Enter') { e.preventDefault(); const v = input.value; input.value = ''; execute(v); renderMirror(); }
+      else if (e.key === 'Tab') { e.preventDefault(); complete(); }
+      else if (e.key === 'ArrowUp') { e.preventDefault(); if (st.hIdx === st.history.length) st.draft = input.value; if (st.hIdx > 0) input.value = st.history[--st.hIdx]; renderMirror(); }
+      else if (e.key === 'ArrowDown') { e.preventDefault(); if (st.hIdx < st.history.length) { st.hIdx++; input.value = st.history[st.hIdx] ?? st.draft; } renderMirror(); }
+      else if (e.key === 'Escape') { e.preventDefault(); input.value = ''; renderMirror(); }
+      else if (e.key === 'F1') { e.preventDefault(); typeAndRun('help'); }
+      else if (e.key === 'F10') { e.preventDefault(); setLang(lang === 'en' ? 'es' : 'en'); }
+      else if (e.key === 'l' && e.ctrlKey) { e.preventDefault(); execute('cls'); }
+      requestAnimationFrame(renderMirror);
+    });
+    ['input', 'select', 'click', 'keyup'].forEach((ev) => input.addEventListener(ev, renderMirror));
+    input.addEventListener('focus', () => field.classList.add('focused'));
+    input.addEventListener('blur', () => field.classList.remove('focused'));
+    box.addEventListener('click', (e) => { if (!e.target.closest('button') && !String(getSelection()).length) input.focus({ preventScroll: true }); });
+
+    renderMirror();
+    return { boot, prime, run: runCmd, onSetupClosed, relang, reset, isBooted: () => st.booted };
+  })();
+
+  /* --------- Setup Utility: BIOS-style program (tabs, item list, item-specific help, key legend) --------- */
   const Setup = (() => {
-    const root = $('#termCore'), tabsEl = $('#suTabs'), left = $('#suLeft');
-    const st = { tab: 'overview', idx: 0, detail: null, helpScreen: false, booted: false };
+    const root = $('#setup'), tabsEl = $('#suTabs'), left = $('#suLeft');
+    const st = { tab: 'overview', idx: 0, detail: null, helpScreen: false };
 
     const kv = (rows) => `<dl class="kv">${rows.map(([k, v]) => `<dt>${k}</dt><dd>${v}</dd>`).join('')}</dl>`;
     const bullets = (list) => `<ul class="su-ul">${list.map((x) => `<li>${x}</li>`).join('')}</ul>`;
@@ -422,31 +728,40 @@
         ];
         case 'contact': return C.contact.items.map((c, i) => ({ key: `contact${i}`, label: L(c.label), help: stripTags(T(c.value)), detail: () => kv([[L(c.label), T(c.value)]]) }));
         case 'exit': return [
+          { key: 'prompt', label: ui('exitPrompt'), help: ui('exitPromptHelp'), action: () => close() },
           { key: 'easy', label: ui('openEasy'), help: ui('exitEasyHelp'), action: () => go('overview') },
           { key: 'lang', label: `${ui('language')}: ${ui('switchLang')}`, help: ui('exitLangHelp'), action: () => setLang(lang === 'en' ? 'es' : 'en') },
-          { key: 'close', label: ui('exitSetup'), help: ui('exitCloseHelp'), action: () => (isMobile() ? Phone.back() : WM.close('term')) },
         ];
         default: return [];
       }
     }
     const current = () => items(st.tab);
 
+    /* keep the active tab / selected item in view by scrolling only their own container
+       (scrollIntoView would also scroll the phone shell and the desktop) */
+    function keepInView(container, el, axis) {
+      if (!el) return;
+      const c = container.getBoundingClientRect(), r = el.getBoundingClientRect();
+      if (axis === 'x') { if (r.left < c.left) container.scrollLeft -= c.left - r.left; else if (r.right > c.right) container.scrollLeft += r.right - c.right; }
+      else if (r.top < c.top) container.scrollTop -= c.top - r.top; else if (r.bottom > c.bottom) container.scrollTop += r.bottom - c.bottom;
+    }
     function renderTabs() {
       tabsEl.replaceChildren(frag(tabs().map((t) => `<button class="su-tab" role="tab" data-tab="${t.id}" aria-selected="${t.id === st.tab}" tabindex="-1">${t.label}</button>`).join('')));
-      $('.su-tab[aria-selected="true"]', tabsEl)?.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+      keepInView(tabsEl, $('.su-tab[aria-selected="true"]', tabsEl), 'x');
     }
     function renderHelp() {
       const it = current()[st.idx];
-      const help = st.helpScreen ? ui('setupHelpTitle') : (it ? it.help : '');
-      let hint = ui(isMobile() ? 'tapOpen' : (it && it.action ? 'hintRun' : 'hintOpen'));
+      $('#suHelp').textContent = st.helpScreen ? ui('setupHelpTitle') : (it ? it.help : '');
+      let hint;
       if (st.detail || st.helpScreen) hint = ui(isMobile() ? 'tapBack' : 'hintBack');
-      $('#suHelp').textContent = help;
+      else if (isMobile()) hint = ui('tapOpen');
+      else hint = `${ui(it && it.action ? 'hintRun' : 'hintOpen')}\n${ui('hintExit')}`;
       $('#suHint').textContent = hint;
     }
     function renderLeft() {
       const list = current();
       if (st.helpScreen) {
-        left.replaceChildren(frag(`<button class="su-back" data-su="back">${ui('suBack')}</button><div class="su-detail"><p class="su-dh">${ui('setupHelpTitle')}</p>${kv(L(C.ui.setupHelp).map(([k, d]) => [k, d]))}</div>`));
+        left.replaceChildren(frag(`<button class="su-back" data-su="back">${ui('suBack')}</button><div class="su-detail"><p class="su-dh">${ui('setupHelpTitle')}</p>${kv(L(C.ui.setupHelp))}</div>`));
       } else if (st.detail) {
         const it = list.find((x) => x.key === st.detail);
         left.replaceChildren(frag(`<button class="su-back" data-su="back">${ui('suBack')}</button><div class="su-detail"><p class="su-dh">${it.label}</p>${it.detail()}</div>`));
@@ -455,37 +770,31 @@
       }
       left.scrollTop = 0;
     }
-    function render() { renderTabs(); renderLeft(); renderHelp(); renderKeys(); }
     function renderKeys() {
       $('#suKeys').replaceChildren(frag(L(C.ui.keys).map(([k, d]) => `<button class="su-key" data-key="${k}"><b>${k}</b> ${d}</button>`).join('')));
     }
-    const ownsFocus = () => root.contains(document.activeElement);
-    function focusSelection() {
-      const target = $('.su-item[aria-selected="true"]', left) || $('.su-back', left) || root;
-      target.focus({ preventScroll: true });
-    }
+    function render() { renderTabs(); renderLeft(); renderHelp(); renderKeys(); }
+    function focusSelection() { ($('.su-item[aria-selected="true"]', left) || $('.su-back', left) || root).focus({ preventScroll: true }); }
 
     function select(i, { focus = true } = {}) {
       const list = current();
       if (st.detail || st.helpScreen || !list.length) return;
       st.idx = (i + list.length) % list.length;
       $$('.su-item', left).forEach((b, j) => { b.setAttribute('aria-selected', String(j === st.idx)); b.tabIndex = j === st.idx ? 0 : -1; });
-      $('.su-item[aria-selected="true"]', left)?.scrollIntoView({ block: 'nearest' });
+      keepInView(left, $('.su-item[aria-selected="true"]', left), 'y');
       renderHelp();
       if (focus) focusSelection();
     }
-    function setTab(id, { idx = 0 } = {}) {
-      st.tab = id; st.idx = idx; st.detail = null; st.helpScreen = false;
-      render(); if (ownsFocus() || !isMobile()) focusSelection();
-    }
+    function setTab(id) { st.tab = id; st.idx = 0; st.detail = null; st.helpScreen = false; render(); focusSelection(); }
     function moveTab(dir) { const t = tabs(), i = t.findIndex((x) => x.id === st.tab); setTab(t[(i + dir + t.length) % t.length].id); }
     function openItem() {
       const it = current()[st.idx]; if (!it) return;
       if (it.action) { it.action(); return; }
       st.detail = it.key; renderLeft(); renderHelp(); focusSelection();
     }
+    /* Esc: detail -> list -> exit to the command prompt */
     function back() {
-      if (!st.detail && !st.helpScreen) return;
+      if (!st.detail && !st.helpScreen) { close(); return; }
       st.detail = null; st.helpScreen = false; renderLeft(); renderHelp(); focusSelection();
     }
     function showHelp() { st.helpScreen = true; st.detail = null; renderLeft(); renderHelp(); focusSelection(); }
@@ -503,8 +812,8 @@
       select(Number(b.dataset.i), { focus: false }); openItem();
     });
 
-    const active = () => (isMobile() ? !$('#mterm').hidden : WM.isActive('term'));
-    function onKey(e) {
+    const active = () => !root.hidden && (isMobile() ? !$('#mterm').hidden : WM.isActive('term'));
+    document.addEventListener('keydown', (e) => {
       if (!active() || e.target.closest?.('input, textarea')) return;
       const k = e.key;
       const map = {
@@ -518,31 +827,36 @@
       if (!map[k]) return;
       if (k === 'Enter' && e.target.closest?.('button') && !e.target.closest('.su-item')) return; /* let other buttons click */
       e.preventDefault(); map[k]();
-    }
-    document.addEventListener('keydown', onKey);
+    });
 
-    /* public API */
-    function open(tab, { item, detail = false } = {}) {
+    /* run the program inside the terminal */
+    function launch(tab = 'overview', { item, detail = false } = {}) {
       st.tab = tab; st.helpScreen = false;
       const list = items(tab);
       const i = item ? Math.max(0, list.findIndex((x) => x.key === item)) : 0;
       st.idx = i; st.detail = detail ? list[i]?.key ?? null : null;
-      render(); focusSelection();
+      root.hidden = false; setTermTitle();
+      render(); if (!isMobile()) focusSelection();
     }
+    function close() { if (root.hidden) return; root.hidden = true; setTermTitle(); Shell.onSetupClosed(); }
+    /* open from outside the terminal (desktop icons, Start menu, phone) */
     async function show(tab, opts) {
+      Shell.prime();
       if (isMobile()) { if (location.hash !== '#terminal') navigate('terminal'); }
       else { setMode('terminal'); await WM.open('term'); }
-      st.booted = true;
-      open(tab, opts);
+      launch(tab, opts);
     }
-    function boot() { if (st.booted) return; st.booted = true; render(); if (!isMobile()) focusSelection(); }
-    function relang() { if (st.idx >= current().length) st.idx = 0; render(); }
-    function reset() { st.tab = 'overview'; st.idx = 0; st.detail = null; st.helpScreen = false; st.booted = false; render(); }
+    function bytes() {
+      const all = tabs().flatMap((t) => items(t.id)).map((it) => `${it.label} ${it.help} ${it.detail ? it.detail() : ''}`).join(' ');
+      const d = h('div'); d.append(frag(all));
+      return new TextEncoder().encode(d.textContent).length;
+    }
+    function relang() { if (st.idx >= current().length) st.idx = 0; render(); setTermTitle(); }
+    function reset() { st.tab = 'overview'; st.idx = 0; st.detail = null; st.helpScreen = false; root.hidden = true; setTermTitle(); }
 
-    render();
-    return { boot, show, relang, reset, help: () => show('overview').then(showHelp) };
+    return { launch, show, relang, reset, bytes, help: () => show('overview').then(showHelp) };
   })();
-  WM.onFirstOpen('term', () => Setup.boot());
+  WM.onFirstOpen('term', () => Shell.boot());
 
   /* --------- mobile phone shell --------- */
   const Phone = (() => {
@@ -584,7 +898,7 @@
       $('#phone').classList.toggle('in-page', id === 'terminal' || !!sec(id));
       if (id === 'terminal') {
         currentId = id; hideEl(page); showEl(termPage, fromHome);
-        Setup.boot();
+        Shell.boot();
         return;
       }
       if (sec(id)) {
@@ -751,7 +1065,7 @@
       if (s.hidden) return;
       s.hidden = true;
       s.classList.remove('done');
-      Setup.reset();
+      Setup.reset(); Shell.reset();
       if (mode === 'easy') go('overview'); else go('terminal');
     };
     s.addEventListener('click', wake);
@@ -809,7 +1123,8 @@
     if (t.closest('[data-mback]')) { Phone.back(); return; }
     const p = t.closest('[data-project]'); if (p && !t.closest('#smList')) { openProject(p.dataset.project); return; }
     const g = t.closest('[data-go]'); if (g) { go(g.dataset.go); return; }
-    if (t.closest('[data-setup-help]')) { Menu.close(); Setup.help(); }
+    if (t.closest('[data-setup-help]')) { Menu.close(); Setup.help(); return; }
+    const c = t.closest('[data-cmd]'); if (c) Shell.run(c.dataset.cmd);
   });
 
   /* --------- layout: desktop <-> mobile --------- */

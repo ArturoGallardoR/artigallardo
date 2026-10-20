@@ -105,12 +105,19 @@ test.describe('non-technical visitor (desktop)', () => {
   });
 });
 
-test.describe('Setup Utility (terminal)', () => {
-  test('keyboard: arrows move between menus and items, Enter opens details, Esc goes back', async ({ page }) => {
+test.describe('terminal: command prompt running the Setup Utility', () => {
+  test('opens as a command prompt that types setup and launches the menus', async ({ page }) => {
     await open(page);
+    await expect(page.locator('#log .cmdline').first()).toHaveText('C:\\Users\\Arti>setup');
+    await expect(page.locator('#setup')).toBeVisible();
+    await expect(page.locator('#termTitle')).toHaveText('ArtiOS Terminal - setup');
     await expect(activeTab(page)).toHaveText('Main');
     await expect(selected(page)).toHaveText('Profile');
+  });
 
+  test('keyboard: arrows move between menus and items, Enter opens details, Esc goes back', async ({ page }) => {
+    await open(page);
+    await expect(selected(page)).toHaveText('Profile');
     await page.keyboard.press('ArrowRight');
     await page.keyboard.press('ArrowRight');
     await expect(activeTab(page)).toHaveText('Projects');
@@ -127,6 +134,7 @@ test.describe('Setup Utility (terminal)', () => {
 
   test('mouse: pointing moves the red bar and a click opens the item', async ({ page }) => {
     await open(page);
+    await expect(selected(page)).toBeVisible();
     await page.locator('.su-tab', { hasText: 'Skills' }).click();
     const item = page.locator('.su-item', { hasText: 'Applied AI' });
     await item.hover();
@@ -138,7 +146,54 @@ test.describe('Setup Utility (terminal)', () => {
     await expect(page.locator('.su-list')).toBeVisible();
   });
 
-  test('F10 and F1 work while Setup is active, and the Exit menu offers the Easy view', async ({ page }) => {
+  test('Esc on a menu exits to the prompt, where commands work and setup comes back', async ({ page }) => {
+    await open(page);
+    await expect(selected(page)).toBeVisible();
+    await page.keyboard.press('Escape');
+    await expect(page.locator('#setup')).toBeHidden();
+    await expect(page.locator('#termTitle')).toHaveText('ArtiOS Terminal');
+    await expect(page.locator('#cmd')).toBeFocused();
+
+    const last = page.locator('#log .entry').last();
+    await page.keyboard.type('skils');
+    await page.keyboard.press('Enter');
+    await expect(last).toContainText('Did you mean skills?');
+
+    await page.keyboard.type('cd projects');
+    await page.keyboard.press('Enter');
+    await expect(page.locator('#ps1')).toHaveText('C:\\Users\\Arti\\Projects>');
+    await page.keyboard.type('type signatures.txt');
+    await page.keyboard.press('Enter');
+    await expect(last).toContainText('Corporate email signature generator');
+
+    await page.keyboard.type('setup skills');
+    await page.keyboard.press('Enter');
+    await expect(page.locator('#setup')).toBeVisible();
+    await expect(activeTab(page)).toHaveText('Skills');
+  });
+
+  test('dir lists files without launching setup.exe', async ({ page }) => {
+    await open(page);
+    await expect(selected(page)).toBeVisible();
+    await page.keyboard.press('Escape');
+    await page.keyboard.type('dir');
+    await page.keyboard.press('Enter');
+    await expect(page.locator('#log .entry').last()).toContainText('setup.exe');
+    await expect(page.locator('#setup')).toBeHidden();
+  });
+
+  test('typed text is rendered as text, never as HTML', async ({ page }) => {
+    await open(page);
+    await expect(selected(page)).toBeVisible();
+    await page.keyboard.press('Escape');
+    await page.keyboard.type('<img src=x onerror=window.__pwned=1>');
+    await page.keyboard.press('Enter');
+    await expect(page.locator('#log .entry').last()).toContainText('<img src=x');
+    expect(await page.locator('#log img').count()).toBe(0);
+    expect(await page.evaluate(() => /** @type {any} */ (window).__pwned)).toBeUndefined();
+  });
+
+  test('F10 and F1 work while Setup runs, and the Exit menu leads to the prompt or the Easy view', async ({ page }) => {
     await open(page);
     await expect(selected(page)).toBeVisible();
     await page.keyboard.press('F10');
@@ -147,6 +202,12 @@ test.describe('Setup Utility (terminal)', () => {
     await page.keyboard.press('F1');
     await expect(detail(page)).toContainText('Teclado y mouse');
     await page.keyboard.press('Escape');
+
+    await page.locator('.su-tab', { hasText: 'Salir' }).click();
+    await page.locator('.su-item', { hasText: 'Salir a la línea de comandos' }).click();
+    await expect(page.locator('#setup')).toBeHidden();
+    await page.locator('#log .run', { hasText: 'setup' }).last().click();
+    await expect(page.locator('#setup')).toBeVisible();
 
     await page.locator('.su-tab', { hasText: 'Salir' }).click();
     await page.locator('.su-item', { hasText: 'Abrir vista sencilla' }).click();
@@ -185,10 +246,11 @@ test.describe('mobile @mobile', () => {
     await expect(page.locator('#mpage')).toBeHidden();
   });
 
-  test('terminal app shows the Setup Utility and opens items by tapping', async ({ page }) => {
+  test('terminal app launches the Setup Utility and opens items by tapping', async ({ page }) => {
     await open(page);
     await page.locator('.app', { hasText: 'Terminal' }).tap();
     await expect(page.locator('#mterm')).toBeVisible();
+    await expect(page.locator('#mterm .su-tab').first()).toBeVisible();
     await page.locator('#mterm .su-tab', { hasText: 'Projects' }).tap();
     await page.locator('#mterm .su-item', { hasText: 'Device management' }).tap();
     await expect(page.locator('#mterm .su-detail')).toContainText('NinjaOne');

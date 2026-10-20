@@ -150,12 +150,65 @@ body.peek .win { background: transparent; backdrop-filter: none; -webkit-backdro
 body.peek .win > * { opacity: 0; }
 body.peek .win::before { opacity: 0; }
 
-/* ═════════ terminal: BIOS / Setup Utility (text mode, #0000AA) ═════════ */
-.setup {
+/* ═════════ terminal: command prompt (#0000AA) that runs the Setup Utility full-screen ═════════ */
+.term {
   --s-bg: #0000aa; --s-gray: #aaaaaa; --s-yellow: #ffff55; --s-red: #aa0000; --s-cyan: #55ffff; --s-green: #55ff55; --s-magenta: #ff77ff;
-  flex: 1; min-height: 0; display: grid; grid-template-columns: minmax(0, 1fr); grid-template-rows: auto minmax(0, 1fr) auto;
-  background: var(--s-bg); color: #fff; font: 16px/1.5 var(--mono);
-  border: 1px solid rgba(20,40,70,.75); outline: 0; user-select: text;
+  position: relative; flex: 1; min-height: 0;
+  background: var(--s-bg); color: #e8e8f2; font: 16px/1.5 var(--mono);
+  border: 1px solid rgba(20,40,70,.75);
+}
+.term button { font: inherit; }
+.shell {
+  position: absolute; inset: 0; overflow-y: auto; overscroll-behavior: contain; padding: 10px 14px 30%;
+  cursor: text; user-select: text; scrollbar-color: var(--s-gray) #00007a;
+}
+.shell p { margin: 0; }
+.note { margin-bottom: 14px; }
+.entry + .entry, .note + .entry, .entry + .note { margin-top: 12px; }
+.cmdline { white-space: pre-wrap; word-break: break-all; color: #fff; }
+.out { margin-top: 4px; }
+.out > * + * { margin-top: 8px; }
+.shell .y { color: var(--s-yellow); } .shell .g { color: var(--s-green); } .shell .dim { color: var(--s-gray); } .shell .b { font-weight: 700; }
+.shell .todo { color: var(--s-magenta); font-weight: 400; }
+.shell .kv { display: grid; grid-template-columns: 16ch minmax(0, 1fr); column-gap: 1ch; row-gap: 2px; margin: 0; }
+.shell .kv dt { color: var(--s-cyan); }
+.shell .kv dd { margin: 0; }
+ul.tl { list-style: none; margin: 0; padding: 0; }
+ul.tl li { position: relative; padding-left: 2ch; }
+ul.tl li::before { content: "-"; position: absolute; left: 0; color: var(--s-gray); }
+ul.tl b { color: #fff; font-weight: 700; }
+.job + .job { margin-top: 10px; }
+.rows { display: grid; }
+.prow, .lsrow { width: 100%; margin: 0 -.5ch; padding: 0 .5ch; border: 0; background: none; color: #e8e8f2; text-align: left; cursor: pointer; }
+.prow { display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr); gap: 3ch; }
+.lsrow { display: block; white-space: pre; }
+.prow:hover, .prow:focus-visible, .lsrow:hover, .lsrow:focus-visible { background: rgba(255,255,255,.14); outline: 0; }
+.ls { white-space: pre; overflow-x: auto; }
+.links { display: flex; flex-wrap: wrap; gap: 2px 3ch; }
+.run { padding: 0; border: 0; background: none; color: var(--s-cyan); cursor: pointer; white-space: nowrap; text-decoration: underline; text-underline-offset: 3px; text-decoration-color: rgba(85,255,255,.45); }
+.run:hover, .run:focus-visible { color: #fff; text-decoration-color: #fff; outline: 0; }
+.prompt-line { display: flex; margin-top: 12px; color: #fff; }
+.prompt-line > label { white-space: pre; }
+.field { position: relative; flex: 1; min-width: 0; }
+.field input { position: absolute; inset: 0; width: 100%; opacity: 0; border: 0; padding: 0; margin: 0; font: inherit; font-size: max(16px, 1em); background: transparent; color: transparent; }
+.mirror { display: block; white-space: pre; overflow: hidden; pointer-events: none; }
+.caret { position: relative; }
+.caret::after { /* cmd.exe blinking underscore */
+  content: ""; position: absolute; left: 0; right: 0; bottom: .12em; height: .14em; min-width: 1ch; background: #fff; animation: blink 1.06s steps(1) infinite;
+}
+.field:not(.focused) .caret::after { opacity: .4; animation: none; }
+@keyframes blink { 50% { opacity: 0; } }
+@container (max-width: 560px) {
+  .shell .kv { grid-template-columns: 1fr; }
+  .shell .kv dd { margin-bottom: 6px; }
+  .prow { grid-template-columns: 1fr; gap: 0; padding-block: 3px; }
+}
+.shell { container-type: inline-size; }
+
+/* Setup Utility: BIOS-style program drawn over the whole console while it runs */
+.setup {
+  position: absolute; inset: 0; display: grid; grid-template-columns: minmax(0, 1fr); grid-template-rows: auto minmax(0, 1fr) auto;
+  background: var(--s-bg); color: #fff; outline: 0; user-select: text;
 }
 .setup button { font: inherit; }
 .su-top { background: var(--s-gray); color: var(--s-bg); }
@@ -191,7 +244,7 @@ body.peek .win::before { opacity: 0; }
 .su-help { min-height: 0; overflow-y: auto; padding: 10px 14px; }
 .su-help-h { text-align: center; padding-bottom: 4px; margin-bottom: 8px; border-bottom: 1px solid #fff; }
 .su-help p { margin: 0; }
-.su-hint { margin-top: 1.5em !important; color: var(--s-cyan); }
+.su-hint { margin-top: 1.5em !important; color: var(--s-cyan); white-space: pre-line; }
 .su-keys { display: flex; flex-wrap: wrap; gap: 0 2.6ch; padding: 2px 1.5ch; background: var(--s-gray); color: var(--s-bg); }
 .su-key { padding: 0 .3ch; border: 0; background: none; color: inherit; cursor: pointer; }
 .su-key b { font-weight: 700; }
@@ -592,10 +645,12 @@ details.tech dt { color: #4a5d75; }
 }
 .mpage .next-sec .btn:active { color: #fff; background: linear-gradient(#058cf5, #015fe6); }
 
-/* terminal app: the Setup Utility is moved here and stacks list over help */
+/* terminal app: the console (and Setup on top of it) is moved here; Setup stacks list over help */
 .mterm { background: #0000aa; }
 .mterm .mpage-body { display: flex; flex-direction: column; overflow: hidden; }
-.mterm .setup { border: 0; font-size: 15px; padding-bottom: env(safe-area-inset-bottom); }
+.mterm .term { border: 0; font-size: 15px; }
+.mterm .shell { padding: 8px 10px 40%; }
+.mterm .setup { padding-bottom: env(safe-area-inset-bottom); }
 .mterm .su-title { display: none; }
 .mterm .su-tabs { padding: 6px 1ch; }
 .mterm .su-tab { min-height: 34px; }
