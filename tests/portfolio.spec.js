@@ -197,6 +197,8 @@ test.describe('mobile @mobile', () => {
   test('terminal app fits the phone width (no panel overflows the screen)', async ({ page }) => {
     await open(page, '', '#terminal');
     await expect(page.locator('#mterm .su-item').first()).toBeVisible();
+    /* measure only after the iOS push transition, which slides the page in from the right */
+    await page.waitForFunction(() => document.querySelector('#mterm')?.getAnimations().every((a) => a.playState !== 'running'));
     const vw = await page.evaluate(() => innerWidth);
     for (const sel of ['#mterm .su-tabs', '#mterm .su-left', '#mterm .su-help']) {
       const box = await page.locator(sel).boundingBox();
