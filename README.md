@@ -24,7 +24,7 @@ Shareable links: `…/artigallardo/?view=easy&lang=es`, `…/artigallardo/#proje
 | `site/js/app.js` | Window manager (Aero Peek, animations), superbar, Start menu search, terminal (command prompt + Setup Utility), Easy view, clock gadget, phone shell and lock screen, routing, i18n. |
 | `site/css/aero.css` | Styles for desktop and mobile. |
 | `site/index.html` | Markup shell and SVG icon sprite. |
-| `site/assets/` | Wallpaper (WebP) and self-hosted fonts. |
+| `site/assets/` | Wallpaper (WebP), self-hosted fonts and the downloadable CV PDFs (`cv/`, EN and ES). |
 | `tests/portfolio.spec.js` | Playwright tests (desktop + mobile). |
 | `.github/workflows/pages.yml` | Runs the tests, then deploys `site/` to GitHub Pages on every push to `main`. |
 

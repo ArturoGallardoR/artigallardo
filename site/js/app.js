@@ -139,8 +139,6 @@
               <dl>
                 <dt>${ui('problem')}</dt><dd>${L(p.problem)}</dd>
                 <dt>${ui('built')}</dt><dd>${L(p.built)}</dd>
-                <dt>${ui('myRole')}</dt><dd>${T(p.role)}</dd>
-                <dt>${ui('tradeoff')}</dt><dd>${T(p.tradeoff)}</dd>
                 <dt>${ui('tools')}</dt><dd>${p.stack}</dd>
               </dl>
             </details>
@@ -471,7 +469,7 @@
         return `
           <p class="y b">${L(p.title)}</p>
           <p class="g">${L(p.result)}</p>
-          ${kv([[ui('problem'), L(p.problem)], [ui('built'), L(p.built)], [ui('myRole'), T(p.role)], [ui('tradeoff'), T(p.tradeoff)], [ui('tools'), p.stack]])}
+          ${kv([[ui('problem'), L(p.problem)], [ui('built'), L(p.built)], [ui('tools'), p.stack]])}
           ${links('projects', ...C.projects.filter((x) => x !== p).slice(0, 2).map((x) => `open ${x.slug}`))}`;
       },
 
@@ -714,7 +712,7 @@
         }));
         case 'projects': return C.projects.map((x) => ({
           key: x.slug, label: L(x.title), help: L(x.plain),
-          detail: () => `<p class="g">${L(x.result)}</p>${kv([[ui('problem'), L(x.problem)], [ui('built'), L(x.built)], [ui('myRole'), T(x.role)], [ui('tradeoff'), T(x.tradeoff)], [ui('tools'), x.stack]])}`,
+          detail: () => `<p class="g">${L(x.result)}</p>${kv([[ui('problem'), L(x.problem)], [ui('built'), L(x.built)], [ui('tools'), x.stack]])}`,
         }));
         case 'skills': return C.skills.map((g, i) => ({ key: `skill${i}`, label: L(g.name), help: L(g.desc), detail: () => `<p>${L(g.desc)}</p>${bullets(g.items.map(L))}` }));
         case 'education': return [

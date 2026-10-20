@@ -84,6 +84,19 @@ test.describe('non-technical visitor (desktop)', () => {
     await expect(page.locator('#p-endpoints details')).toHaveAttribute('open', '');
   });
 
+  test('Contact links the CV PDF in the visitor\'s language, and that file is published', async ({ page }) => {
+    const fs = require('fs');
+    const cvHref = async (/** @type {string} */ lang) => {
+      await open(page, `?view=easy&lang=${lang}`, '#contact');
+      const href = await page.locator('#easyPane .contact-list a[href$=".pdf"]').getAttribute('href');
+      if (!href) throw new Error(`no CV link in ${lang}`);
+      expect(fs.existsSync(path.resolve(__dirname, '../site', href)), `${href} exists under site/`).toBe(true);
+      return href;
+    };
+    expect(await cvHref('en')).toMatch(/_EN\.pdf$/);
+    expect(await cvHref('es')).toMatch(/_ES\.pdf$/);
+  });
+
   test('Easy view search treats typed text as text, never as HTML', async ({ page }) => {
     await open(page, '?view=easy');
     await page.locator('#easySearch').fill('<img src=x onerror=window.__pwned=1>');
@@ -121,6 +134,7 @@ test.describe('terminal: command prompt running the Setup Utility', () => {
     await page.keyboard.press('ArrowRight');
     await page.keyboard.press('ArrowRight');
     await expect(activeTab(page)).toHaveText('Projects');
+    await page.keyboard.press('ArrowDown'); // third project in content.js order
     await page.keyboard.press('ArrowDown');
     await expect(selected(page)).toHaveText('Corporate email signature generator');
     await expect(page.locator('#suHelp')).toContainText('on-brand email signature');
