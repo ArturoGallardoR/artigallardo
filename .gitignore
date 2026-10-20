@@ -16,3 +16,6 @@ mockup/v1-editorial.html
 node_modules/
 test-results/
 playwright-report/
+
+# local design explorations (not published)
+mockups/
