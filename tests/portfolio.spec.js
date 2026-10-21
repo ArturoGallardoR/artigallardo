@@ -134,6 +134,44 @@ test.describe('non-technical visitor (desktop)', () => {
   });
 });
 
+test.describe('icon sprite', () => {
+  test('every icon, gradient, clip path and mask the page references exists in the sprite', async ({ page }) => {
+    await open(page, '?view=easy');
+    await expect(page.locator('#winEasy')).toBeVisible();
+    await page.locator('#start').click(); // Start menu renders its icons on demand
+    const missing = await page.evaluate(() => {
+      const refs = new Set();
+      document.querySelectorAll('use').forEach((u) => refs.add((u.getAttribute('href') || '').slice(1)));
+      document.querySelectorAll('[fill^="url(#"], [stroke^="url(#"], [clip-path^="url(#"], [mask^="url(#"]').forEach((el) => {
+        ['fill', 'stroke', 'clip-path', 'mask'].forEach((a) => { const m = /^url\(#([^)]+)\)/.exec(el.getAttribute(a) || ''); if (m) refs.add(m[1]); });
+      });
+      return [...refs].filter((id) => !document.getElementById(id));
+    });
+    expect(missing).toEqual([]);
+  });
+});
+
+test.describe('wallpaper', () => {
+  test('loads a file at least as wide as the screen in device pixels and stays still when the mouse moves', async ({ page }) => {
+    await page.setViewportSize({ width: 2200, height: 1000 }); // wider than the 1920 file: must not be upscaled
+    await open(page, '?view=easy');
+    const img = page.locator('.wall img');
+    await expect(img).toHaveJSProperty('complete', true);
+    const fileWidth = await img.evaluate((el) => new Promise((done) => {
+      const probe = new Image(); // naturalWidth of the <img> is density-corrected, so measure the chosen file itself
+      probe.onload = () => done(probe.naturalWidth);
+      probe.src = /** @type {HTMLImageElement} */ (el).currentSrc;
+    }));
+    expect(fileWidth).toBeGreaterThanOrEqual(2200);
+    const box = () => img.evaluate((el) => { const r = el.getBoundingClientRect(); return [r.x, r.y, r.width, r.height]; });
+    const before = await box();
+    await page.mouse.move(20, 20);
+    await page.mouse.move(2180, 980, { steps: 5 });
+    await page.waitForTimeout(800); // longer than any transition that could move it
+    expect(await box()).toEqual(before);
+  });
+});
+
 test.describe('terminal: command prompt running the Setup Utility', () => {
   test('opens as a command prompt that types setup and launches the menus', async ({ page }) => {
     await open(page);

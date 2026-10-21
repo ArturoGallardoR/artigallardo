@@ -42,5 +42,5 @@ npm test
 
 - **Selawik** — Microsoft, SIL Open Font License 1.1 (`site/assets/fonts/Selawik-LICENSE.txt`).
 - **Inconsolata** — SIL Open Font License 1.1, subset to the glyphs this site uses (`site/assets/fonts/Inconsolata-OFL.txt`).
-- Custom SVG glass-orb icons (full size + small `-s` variants for toolbars and menus).
-- AI-generated wallpaper, upscaled with EDSR super-resolution (OpenCV `dnn_superres`): `wallpaper-1920`/`-2752` for desktop (1x/2x) and a dedicated `wallpaper-mobile` portrait crop.
+- Custom SVG skeuomorphic Frutiger Aero icons (glossy, free-standing objects; one sprite per icon at every size).
+- AI-generated wallpaper, upscaled 4x with Real-ESRGAN (`RealESRGAN_x4plus`) and recombined with the original's low frequencies so colours and soft light rays stay true: `wallpaper-1920`/`-2560`/`-3840` for desktop (picked by `srcset` from the real device-pixel width) and a dedicated `wallpaper-mobile` portrait crop (1728x3072). The wallpaper is static; only the bubbles move.

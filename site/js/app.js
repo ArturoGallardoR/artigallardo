@@ -19,9 +19,8 @@
   /* Only author-controlled templates go through frag(); user-typed text is always esc()'d or set via textContent. */
   const frag = (html) => document.createRange().createContextualFragment(html);
   const h = (tag, cls, text) => { const n = document.createElement(tag); if (cls) n.className = cls; if (text != null) n.textContent = text; return n; };
-  /* Inline icons (class "i", 18-26px) use the "-s" orb whose object fills the sphere;
-     larger icons (any other class) use the full orb with caustic and highlight. */
-  const svg = (id, cls = 'i') => `<svg class="${cls}" aria-hidden="true"><use href="#${cls === 'i' ? `${id}-s` : id}"/></svg>`;
+  /* One skeuomorphic sprite per icon; class "i" sizes it inline (1em), any other class is sized by its container. */
+  const svg = (id, cls = 'i') => `<svg class="${cls}" aria-hidden="true"><use href="#${id}"/></svg>`;
   const fold = (s) => String(s).normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
   const stripTags = (s) => String(s).replace(/<[^>]+>/g, '');
   const store = {
@@ -1171,7 +1170,7 @@
   }
   mq.addEventListener('change', applyLayout);
 
-  /* --------- ambient: bubbles, wallpaper parallax, pointer-following glass highlight + taskbar hot-track --------- */
+  /* --------- ambient: bubbles, pointer-following glass highlight + taskbar hot-track --------- */
   (() => {
     const fx = $('#fx');
     function spawnBubbles() {
@@ -1193,9 +1192,6 @@
       if (frame) return;
       frame = requestAnimationFrame(() => {
         frame = 0;
-        const root = document.documentElement.style;
-        root.setProperty('--px', ((last.clientX / innerWidth) * 2 - 1).toFixed(3));
-        root.setProperty('--py', ((last.clientY / innerHeight) * 2 - 1).toFixed(3));
         const glass = last.target.closest?.('.win, .task');
         if (glass) {
           const r = glass.getBoundingClientRect();

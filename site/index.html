@@ -11,298 +11,208 @@
   · Selawik (Microsoft, SIL OFL 1.1) — open Segoe UI substitute.
   · Inconsolata (SIL OFL 1.1) — Consolas-inspired monospace, subset for this site.
 -->
-<link rel="preload" as="image" href="assets/wallpaper-1920.webp" imagesrcset="assets/wallpaper-1920.webp 1x, assets/wallpaper-2752.webp 2x" media="(min-width: 820px)">
-<link rel="preload" as="image" href="assets/wallpaper-mobile.webp" media="(max-width: 819px)">
 <link rel="stylesheet" href="css/aero.css">
 <script src="js/content.js" defer></script>
 <script src="js/app.js" defer></script>
 </head>
 <body>
 
-<!-- ambient layers: wallpaper with pointer parallax + floating bubbles (generated in app.js) -->
-<div class="wall" aria-hidden="true"></div>
+<!-- ambient layers: static wallpaper + floating bubbles (generated in app.js).
+     sizes: object-fit cover needs the viewport width, or its height x 1.79 (image aspect) when the window is taller. -->
+<picture class="wall" aria-hidden="true">
+  <source media="(max-width: 819px)" srcset="assets/wallpaper-mobile.webp">
+  <img src="assets/wallpaper-1920.webp" srcset="assets/wallpaper-1920.webp 1920w, assets/wallpaper-2560.webp 2560w, assets/wallpaper-3840.webp 3840w" sizes="max(100vw, 179vh)" alt="" fetchpriority="high">
+</picture>
 <div class="fx" id="fx" aria-hidden="true"></div>
 
 <!-- icon sprite: hidden by size (display:none would break gradient references) -->
 <svg width="0" height="0" style="position:absolute" aria-hidden="true">
   <defs>
-    <linearGradient id="gBlue" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#7fd6ff"/><stop offset=".5" stop-color="#2b8fe0"/><stop offset="1" stop-color="#0b4fae"/></linearGradient>
     <linearGradient id="gAqua" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#b9f3ff"/><stop offset=".55" stop-color="#2cc0e8"/><stop offset="1" stop-color="#0a7fb8"/></linearGradient>
-    <linearGradient id="gLime" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#d8ff9a"/><stop offset=".55" stop-color="#6fd034"/><stop offset="1" stop-color="#2a8d17"/></linearGradient>
-    <linearGradient id="gFolderBack" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#f7cf57"/><stop offset="1" stop-color="#d69a12"/></linearGradient>
-    <linearGradient id="gFolderFront" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff2b0"/><stop offset=".5" stop-color="#ffd54f"/><stop offset="1" stop-color="#eaa915"/></linearGradient>
-    <linearGradient id="gAmber" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffd59a"/><stop offset=".55" stop-color="#e98c2c"/><stop offset="1" stop-color="#a9520f"/></linearGradient>
-    <linearGradient id="gPaper" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffffff"/><stop offset="1" stop-color="#d7ebfb"/></linearGradient>
-    <linearGradient id="gNavy" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#6c8fc7"/><stop offset=".5" stop-color="#244a8a"/><stop offset="1" stop-color="#0f2753"/></linearGradient>
     <linearGradient id="gGloss" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff" stop-opacity=".85"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></linearGradient>
-
-    <!-- glass orb layers -->
-    <radialGradient id="oBlue" cx=".5" cy=".64" r=".62"><stop offset="0" stop-color="#f2fdff"/><stop offset=".42" stop-color="#93ddff"/><stop offset=".84" stop-color="#2b8fe6"/><stop offset="1" stop-color="#1259b0"/></radialGradient>
-    <radialGradient id="oGreen" cx=".5" cy=".64" r=".62"><stop offset="0" stop-color="#f6ffec"/><stop offset=".42" stop-color="#b9f28e"/><stop offset=".84" stop-color="#4cb52a"/><stop offset="1" stop-color="#267812"/></radialGradient>
-    <radialGradient id="oAmber" cx=".5" cy=".64" r=".62"><stop offset="0" stop-color="#fff8e6"/><stop offset=".42" stop-color="#ffd683"/><stop offset=".84" stop-color="#f08a24"/><stop offset="1" stop-color="#ad4d0a"/></radialGradient>
-    <radialGradient id="oPink" cx=".5" cy=".64" r=".62"><stop offset="0" stop-color="#fff2f9"/><stop offset=".42" stop-color="#ffb6de"/><stop offset=".84" stop-color="#e0489b"/><stop offset="1" stop-color="#9c1464"/></radialGradient>
-    <radialGradient id="oNavy" cx=".5" cy=".64" r=".62"><stop offset="0" stop-color="#e9f4ff"/><stop offset=".42" stop-color="#86aee2"/><stop offset=".84" stop-color="#244b90"/><stop offset="1" stop-color="#0e2550"/></radialGradient>
-    <radialGradient id="oShade" cx=".5" cy=".46" r=".54"><stop offset=".6" stop-color="#002366" stop-opacity="0"/><stop offset="1" stop-color="#002366" stop-opacity=".42"/></radialGradient>
-    <radialGradient id="oCaustic" cx=".5" cy=".5" r=".5"><stop offset="0" stop-color="#fff" stop-opacity=".8"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></radialGradient>
-    <linearGradient id="oGloss" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff" stop-opacity=".96"/><stop offset=".55" stop-color="#fff" stop-opacity=".32"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></linearGradient>
+    <!-- Frutiger Aero skeuomorphic objects: soft muted hues, thick bevels, top gloss -->
+    <linearGradient id="faGloss" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff" stop-opacity="0.92"/><stop offset="0.6" stop-color="#fff" stop-opacity="0.18"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></linearGradient>
+    <linearGradient id="faSteel" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#f2faff" stop-opacity="0.41"/><stop offset="0.5" stop-color="#a8cbef" stop-opacity="0.34"/><stop offset="1" stop-color="#6a93c6" stop-opacity="0.54"/></linearGradient>
+    <linearGradient id="faSteelEdge" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#5f86b8" stop-opacity="0.3"/><stop offset="1" stop-color="#2f4f7c" stop-opacity="0.42"/></linearGradient>
+    <linearGradient id="faPerson" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffffff" stop-opacity="0.78"/><stop offset="1" stop-color="#cfe2f5" stop-opacity="0.61"/></linearGradient>
+    <linearGradient id="faSilver" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffffff" stop-opacity="0.52"/><stop offset="0.45" stop-color="#dfe8f0" stop-opacity="0.36"/><stop offset="0.55" stop-color="#b4c3d1" stop-opacity="0.36"/><stop offset="1" stop-color="#eef3f7" stop-opacity="0.49"/></linearGradient>
+    <linearGradient id="faScreen" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#1f4a39" stop-opacity="0.7"/><stop offset="1" stop-color="#021009" stop-opacity="0.78"/></linearGradient>
+    <linearGradient id="faGreen" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#d4ffc0"/><stop offset="1" stop-color="#3fcf4a"/></linearGradient>
+    <linearGradient id="faLeather" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffc49e" stop-opacity="0.48"/><stop offset="0.55" stop-color="#dc6a3e" stop-opacity="0.54"/><stop offset="1" stop-color="#9a3618" stop-opacity="0.74"/></linearGradient>
+    <linearGradient id="faGlassBack" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#c6e6fb" stop-opacity="0.32"/><stop offset="1" stop-color="#4c8dcb" stop-opacity="0.49"/></linearGradient>
+    <linearGradient id="faGlassFront" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#eaf7ff" stop-opacity="0.39"/><stop offset="0.5" stop-color="#8cc6ef" stop-opacity="0.29"/><stop offset="1" stop-color="#3b84cc" stop-opacity="0.5"/></linearGradient>
+    <linearGradient id="faGear" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#d4f0ff" stop-opacity="0.42"/><stop offset="0.45" stop-color="#3a9cf2" stop-opacity="0.36"/><stop offset="0.82" stop-color="#0f63c8" stop-opacity="0.49"/><stop offset="1" stop-color="#49a6f4" stop-opacity="0.55"/></linearGradient>
+    <linearGradient id="faNavy" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#8aa6d0" stop-opacity="0.42"/><stop offset="0.55" stop-color="#2a4878" stop-opacity="0.5"/><stop offset="1" stop-color="#162c50" stop-opacity="0.59"/></linearGradient>
+    <linearGradient id="faGold" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff1b8" stop-opacity="0.77"/><stop offset="0.5" stop-color="#e3b646" stop-opacity="0.72"/><stop offset="1" stop-color="#a2761a" stop-opacity="0.81"/></linearGradient>
+    <linearGradient id="faEnvelope" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#f4fbff" stop-opacity="0.36"/><stop offset="0.55" stop-color="#a9d3f3" stop-opacity="0.31"/><stop offset="1" stop-color="#5b98d2" stop-opacity="0.47"/></linearGradient>
+    <linearGradient id="faFlap" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffffff" stop-opacity="0.55"/><stop offset="1" stop-color="#c4e2f8" stop-opacity="0.35"/></linearGradient>
+    <linearGradient id="faRoseTop" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffe4e7" stop-opacity="0.47"/><stop offset="1" stop-color="#f0a2ad" stop-opacity="0.39"/></linearGradient>
+    <linearGradient id="faRoseFront" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#e58a97" stop-opacity="0.4"/><stop offset="1" stop-color="#b5536a" stop-opacity="0.52"/></linearGradient>
+    <linearGradient id="faSleeveTop" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#d6edff" stop-opacity="0.47"/><stop offset="1" stop-color="#83c0f0" stop-opacity="0.39"/></linearGradient>
+    <linearGradient id="faSleeveFront" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#4d97dc" stop-opacity="0.4"/><stop offset="1" stop-color="#2a62aa" stop-opacity="0.52"/></linearGradient>
+    <linearGradient id="faRing" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffffff" stop-opacity="0.52"/><stop offset="0.5" stop-color="#d3dce6" stop-opacity="0.33"/><stop offset="1" stop-color="#f3f6f9" stop-opacity="0.52"/></linearGradient>
+    <radialGradient id="faBlueDisc" cx="0.5" cy="0.3" r="0.75"><stop offset="0" stop-color="#c8ecff" stop-opacity="0.39"/><stop offset="0.55" stop-color="#2f8ff0" stop-opacity="0.39"/><stop offset="1" stop-color="#0f55b5" stop-opacity="0.55"/></radialGradient>
+    <radialGradient id="faTeal" cx="0.42" cy="0.32" r="0.75"><stop offset="0" stop-color="#e8fff8" stop-opacity="0.36"/><stop offset="0.5" stop-color="#5ccfb6" stop-opacity="0.33"/><stop offset="1" stop-color="#1d8a75" stop-opacity="0.53"/></radialGradient>
+    <linearGradient id="faRed" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffcac7" stop-opacity="0.36"/><stop offset="0.55" stop-color="#e8605d" stop-opacity="0.36"/><stop offset="1" stop-color="#b42d2c" stop-opacity="0.51"/></linearGradient>
+    <linearGradient id="faRedEdge" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#a8302e" stop-opacity="0.33"/><stop offset="1" stop-color="#6e1a1a" stop-opacity="0.43"/></linearGradient>
+    <radialGradient id="faCaustic" cx=".5" cy=".5" r=".5"><stop offset="0" stop-color="#fff" stop-opacity=".8"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></radialGradient>
+    <path id="faGearBig" d="M20 14.6L21.56 11.08L25.05 11.82L25.04 15.67L27.97 17.5L31.43 15.81L33.63 18.62L31.15 21.56L32.21 24.85L35.95 25.77L35.83 29.34L32.03 30L30.74 33.2L33.01 36.31L30.62 38.96L27.29 37.03L24.24 38.65L23.98 42.5L20.45 42.99L19.14 39.37L15.76 38.65L13.09 41.43L10.06 39.54L11.39 35.92L9.26 33.2L5.43 33.61L4.33 30.22L7.67 28.3L7.79 24.85L4.59 22.7L5.93 19.39L9.72 20.07L12.03 17.5L10.96 13.8L14.11 12.12L16.58 15.08ZM25 27a5 5 0 1 0 -10 0a5 5 0 1 0 10 0Z"/>
+    <path id="faGearSmall" d="M35.5 6.1L36.69 4.07L39.31 4.8L39.3 7.15L41.29 8.89L43.61 8.55L44.68 11.05L42.83 12.51L42.71 15.15L44.42 16.76L43.14 19.15L40.85 18.61L38.71 20.17L38.52 22.51L35.84 22.99L34.84 20.87L32.29 20.17L30.34 21.48L28.29 19.69L29.32 17.58L28.29 15.15L26.05 14.44L26.17 11.72L28.46 11.21L29.71 8.89L28.87 6.69L31.07 5.09L32.9 6.57ZM38.5 13.5a3 3 0 1 0 -6 0a3 3 0 1 0 6 0Z"/>
+    <!-- masks keep back layers (bevel, shadow) from showing through the translucent faces -->
+    <mask id="faMaskTerm" maskUnits="userSpaceOnUse" x="0" y="0" width="48" height="48"><rect width="48" height="48" fill="#fff"/><rect x="3" y="6.5" width="42" height="28.5" rx="3.5"/></mask>
+    <mask id="faMaskTile" maskUnits="userSpaceOnUse" x="0" y="0" width="48" height="48"><rect width="48" height="48" fill="#fff"/><rect x="5" y="4" width="38" height="37" rx="9"/></mask>
+    <mask id="faMaskHead" maskUnits="userSpaceOnUse" x="0" y="0" width="48" height="48"><rect width="48" height="48" fill="#fff"/><circle cx="24" cy="18" r="7.4"/></mask>
+    <mask id="faMaskBody" maskUnits="userSpaceOnUse" x="0" y="0" width="48" height="48"><rect width="48" height="48" fill="#fff"/><path d="M9 44c0-9.5 6.7-14.5 15-14.5S39 34.5 39 44z"/></mask>
+    <mask id="faMaskCase" maskUnits="userSpaceOnUse" x="0" y="0" width="48" height="48"><rect width="48" height="48" fill="#fff"/><rect x="4" y="12" width="40" height="28" rx="5"/></mask>
+    <mask id="faMaskGearS" maskUnits="userSpaceOnUse" x="0" y="0" width="48" height="48"><rect width="48" height="48" fill="#fff"/><use href="#faGearSmall"/></mask>
+    <mask id="faMaskGearB" maskUnits="userSpaceOnUse" x="0" y="0" width="48" height="48"><rect width="48" height="48" fill="#fff"/><use href="#faGearBig"/></mask>
+    <mask id="faMaskBoard" maskUnits="userSpaceOnUse" x="0" y="0" width="48" height="48"><rect width="48" height="48" fill="#fff"/><path d="M2.5 19.5L24 9.5l21.5 10L24 29.5z"/></mask>
+    <mask id="faMaskMail" maskUnits="userSpaceOnUse" x="0" y="0" width="48" height="48"><rect width="48" height="48" fill="#fff"/><path d="M4 14.5L44 10v26.5L4 41z" stroke="#000" stroke-linejoin="round"/></mask>
+    <mask id="faMaskHelp" maskUnits="userSpaceOnUse" x="0" y="0" width="48" height="48"><rect width="48" height="48" fill="#fff"/><circle cx="24" cy="24" r="21"/></mask>
+    <mask id="faMaskGlobe" maskUnits="userSpaceOnUse" x="0" y="0" width="48" height="48"><rect width="48" height="48" fill="#fff"/><circle cx="24" cy="24" r="20"/></mask>
+    <mask id="faMaskPower" maskUnits="userSpaceOnUse" x="0" y="0" width="48" height="48"><rect width="48" height="48" fill="#fff"/><rect x="4" y="6.5" width="40" height="32" rx="8"/></mask>
+    <linearGradient id="faBronzeSolid" x1="0" y1="0" x2=".6" y2="1"><stop offset="0" stop-color="#ffdcb4"/><stop offset=".5" stop-color="#d98a4f"/><stop offset="1" stop-color="#8c4416"/></linearGradient>
+    <linearGradient id="faRoseSide" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#d77a8b" stop-opacity=".55"/><stop offset="1" stop-color="#a8465c" stop-opacity=".7"/></linearGradient>
+    <clipPath id="faGearBigClip"><use href="#faGearBig"/></clipPath>
+    <clipPath id="faGearSmallClip"><use href="#faGearSmall"/></clipPath>
+    <clipPath id="faTileClip"><rect x="5" y="4" width="38" height="37" rx="9"/></clipPath>
+    <clipPath id="faGlobeClip"><circle cx="24" cy="24" r="19.4"/></clipPath>
   </defs>
   <symbol id="ic-term" viewBox="0 0 48 48">
-    <circle cx="24" cy="24" r="22" fill="url(#oNavy)"/>
-    <g transform="translate(24 25.5) scale(0.62) translate(-24 -24)"><rect x="3" y="6" width="42" height="34" rx="4" fill="url(#gBlue)" stroke="#0a3f8f"/>
-    <rect x="7" y="10" width="34" height="24" rx="1.5" fill="#05080d"/>
-    <path d="M11 16l5 4-5 4" fill="none" stroke="#55FF55" stroke-width="2.4" stroke-linecap="square"/>
-    <rect x="19" y="23" width="9" height="2.4" fill="#55FF55"/>
-    <rect x="15" y="40" width="18" height="4" rx="1" fill="url(#gBlue)" stroke="#0a3f8f"/>
-    <path d="M5 10a3 3 0 0 1 3-3h32a3 3 0 0 1 3 3v6c-12 3-26 3-38 0z" fill="url(#gGloss)" opacity=".55"/></g>
-    <circle cx="24" cy="24" r="22" fill="url(#oShade)"/>
-    <ellipse cx="24" cy="38" rx="13" ry="5.5" fill="url(#oCaustic)"/>
-    <ellipse cx="24" cy="14" rx="15.5" ry="9.5" fill="url(#oGloss)"/>
-    <circle cx="34.5" cy="10.5" r="1.6" fill="#fff" fill-opacity=".9"/>
-    <circle cx="24" cy="24" r="21.4" fill="none" stroke="#fff" stroke-opacity=".85" stroke-width="1.2"/>
-    <circle cx="24" cy="24" r="22.5" fill="none" stroke="#0b3f86" stroke-opacity=".45" stroke-width=".8"/>
+    <path d="M18.5 35h11l3 6.5h-17z" fill="url(#faSilver)" stroke="#6f7c8a" stroke-width=".8" stroke-linejoin="round"/>
+    <rect x="12" y="41" width="24" height="3.2" rx="1.6" fill="url(#faSteelEdge)"/>
+    <rect x="3" y="9" width="42" height="28.5" rx="3.5" fill="#76838f" fill-opacity=".45" mask="url(#faMaskTerm)"/>
+    <rect x="3" y="6.5" width="42" height="28.5" rx="3.5" fill="url(#faSilver)" stroke="#66727f" stroke-width=".8"/>
+    <rect x="4" y="7.5" width="40" height="26.5" rx="2.6" fill="none" stroke="#fff" stroke-opacity=".8" stroke-width=".8"/>
+    <rect x="7" y="10.5" width="34" height="20.5" rx="1.5" fill="url(#faScreen)" stroke="#33424f" stroke-width=".8"/>
+    <path d="M7.5 30.5L13 26l4 2.4 5.5-6.4 4.5 3.6 6-6.6 7.5 5.5v6z" fill="#3fcf4a" fill-opacity=".3"/>
+    <path d="M11 15l5 3.6-5 3.6" fill="none" stroke="url(#faGreen)" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
+    <rect x="18" y="21" width="8" height="2.2" rx=".5" fill="#6dff79"/>
+    <path d="M7.5 11h33v5.5C30 14.5 18 16.5 7.5 22z" fill="#fff" fill-opacity=".2"/>
+    <ellipse cx="24" cy="29.5" rx="13" ry="2.2" fill="url(#faCaustic)" opacity=".35"/><path d="M4.2 31.5h39.6" stroke="#fff" stroke-opacity=".7" stroke-width=".8"/>
   </symbol>
   <symbol id="ic-profile" viewBox="0 0 48 48">
-    <circle cx="24" cy="24" r="22" fill="url(#oBlue)"/>
-    <g transform="translate(24 25.5) scale(0.64) translate(-24 -24)"><path d="M10 4h20l9 9v29a2 2 0 0 1-2 2H10a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2z" fill="url(#gPaper)" stroke="#2b6cb0"/>
-    <path d="M30 4v9h9" fill="#cfe6fb" stroke="#2b6cb0"/>
-    <circle cx="19" cy="19" r="5.5" fill="url(#gAqua)" stroke="#0a6a9c"/>
-    <path d="M11 33c0-5 3.6-8 8-8s8 3 8 8z" fill="url(#gAqua)" stroke="#0a6a9c"/>
-    <path d="M14 38h20M14 41h14" stroke="#7fa6cf" stroke-width="1.6" stroke-linecap="round"/>
-    <path d="M28 21h6M28 25h6" stroke="#7fa6cf" stroke-width="1.6" stroke-linecap="round"/></g>
-    <circle cx="24" cy="24" r="22" fill="url(#oShade)"/>
-    <ellipse cx="24" cy="38" rx="13" ry="5.5" fill="url(#oCaustic)"/>
-    <ellipse cx="24" cy="14" rx="15.5" ry="9.5" fill="url(#oGloss)"/>
-    <circle cx="34.5" cy="10.5" r="1.6" fill="#fff" fill-opacity=".9"/>
-    <circle cx="24" cy="24" r="21.4" fill="none" stroke="#fff" stroke-opacity=".85" stroke-width="1.2"/>
-    <circle cx="24" cy="24" r="22.5" fill="none" stroke="#0b3f86" stroke-opacity=".45" stroke-width=".8"/>
+    <rect x="5" y="7" width="38" height="37" rx="9" fill="url(#faSteelEdge)" mask="url(#faMaskTile)"/>
+    <rect x="5" y="4" width="38" height="37" rx="9" fill="url(#faSteel)" stroke="#55708f" stroke-width=".8"/>
+    <g clip-path="url(#faTileClip)">
+      <path d="M9 44c0-9.5 6.7-14.5 15-14.5S39 34.5 39 44z" fill="#55708f" fill-opacity=".35" transform="translate(0 1)" mask="url(#faMaskBody)"/>
+      <path d="M9 44c0-9.5 6.7-14.5 15-14.5S39 34.5 39 44z" fill="url(#faPerson)" stroke="#6a83a1" stroke-width=".8"/>
+    </g>
+    <circle cx="24" cy="19" r="7.4" fill="#55708f" fill-opacity=".35" mask="url(#faMaskHead)"/>
+    <circle cx="24" cy="18" r="7.4" fill="url(#faPerson)" stroke="#6a83a1" stroke-width=".8"/>
+    <rect x="6.2" y="5.2" width="35.6" height="34.6" rx="8" fill="none" stroke="#fff" stroke-opacity=".85" stroke-width=".9"/>
+    <path d="M6 13a8 8 0 0 1 8-8h20a8 8 0 0 1 8 8v3c-12 4-24 4-36 0z" fill="url(#faGloss)" opacity=".7"/>
+    <ellipse cx="24" cy="37.5" rx="14" ry="3.2" fill="url(#faCaustic)" opacity=".75"/>
   </symbol>
   <symbol id="ic-case" viewBox="0 0 48 48">
-    <circle cx="24" cy="24" r="22" fill="url(#oBlue)"/>
-    <g transform="translate(24 25.5) scale(0.62) translate(-24 -24)"><path d="M17 13v-3a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v3" fill="none" stroke="#7a3d0a" stroke-width="2.5"/>
-    <rect x="4" y="13" width="40" height="28" rx="3.5" fill="url(#gAmber)" stroke="#7a3d0a"/>
-    <path d="M4 24h40" stroke="#7a3d0a" stroke-opacity=".55"/>
-    <rect x="20" y="21" width="8" height="6" rx="1" fill="#ffe6b8" stroke="#7a3d0a"/>
-    <path d="M6 16a2 2 0 0 1 2-2h32a2 2 0 0 1 2 2v4c-12 2-24 2-36 0z" fill="url(#gGloss)" opacity=".7"/></g>
-    <circle cx="24" cy="24" r="22" fill="url(#oShade)"/>
-    <ellipse cx="24" cy="38" rx="13" ry="5.5" fill="url(#oCaustic)"/>
-    <ellipse cx="24" cy="14" rx="15.5" ry="9.5" fill="url(#oGloss)"/>
-    <circle cx="34.5" cy="10.5" r="1.6" fill="#fff" fill-opacity=".9"/>
-    <circle cx="24" cy="24" r="21.4" fill="none" stroke="#fff" stroke-opacity=".85" stroke-width="1.2"/>
-    <circle cx="24" cy="24" r="22.5" fill="none" stroke="#0b3f86" stroke-opacity=".45" stroke-width=".8"/>
+    <path d="M17 13V9.5A2.5 2.5 0 0 1 19.5 7h9A2.5 2.5 0 0 1 31 9.5V13" fill="none" stroke="#6a2f1b" stroke-width="3.2"/>
+    <path d="M18.2 12.5V9.8a1.4 1.4 0 0 1 1.4-1.4h8.8" fill="none" stroke="#f3c2a4" stroke-opacity=".7" stroke-width=".9"/>
+    <rect x="4" y="15" width="40" height="28" rx="5" fill="#64291a" fill-opacity=".5" mask="url(#faMaskCase)"/>
+    <rect x="4" y="12" width="40" height="28" rx="5" fill="url(#faLeather)" stroke="#6e3420" stroke-width=".8"/>
+    <rect x="5" y="13" width="38" height="26" rx="4.2" fill="none" stroke="#fff" stroke-opacity=".35" stroke-width=".8"/>
+    <path d="M4.5 23.5c13 3 26 3 39 0" fill="none" stroke="#6e3420" stroke-opacity=".55"/>
+    <path d="M4.5 24.7c13 3 26 3 39 0" fill="none" stroke="#fff" stroke-opacity=".25"/>
+    <rect x="20" y="21" width="8" height="6.5" rx="1.6" fill="url(#faSilver)" stroke="#5f6b78" stroke-width=".8"/>
+    <path d="M6 17a4 4 0 0 1 4-4h28a4 4 0 0 1 4 4v3c-12 2.6-24 2.6-36 0z" fill="url(#faGloss)" opacity=".75"/>
+    <ellipse cx="24" cy="36" rx="15" ry="3" fill="url(#faCaustic)" opacity=".8"/>
   </symbol>
   <symbol id="ic-folder" viewBox="0 0 48 48">
-    <circle cx="24" cy="24" r="22" fill="url(#oBlue)"/>
-    <g transform="translate(24 25.5) scale(0.64) translate(-24 -24)"><path d="M4 12a3 3 0 0 1 3-3h11l4 4h19a3 3 0 0 1 3 3v22a3 3 0 0 1-3 3H7a3 3 0 0 1-3-3z" fill="url(#gFolderBack)" stroke="#a36d06"/>
-    <rect x="9" y="15" width="30" height="16" fill="#fff" stroke="#c9d8e6"/>
-    <path d="M3 21a2 2 0 0 1 2-2h38a2 2 0 0 1 2 2l-2 17a3 3 0 0 1-3 3H8a3 3 0 0 1-3-3z" fill="url(#gFolderFront)" stroke="#a36d06"/>
-    <path d="M5.5 22h37l-.6 5c-12 2-24 2-36 0z" fill="url(#gGloss)" opacity=".75"/></g>
-    <circle cx="24" cy="24" r="22" fill="url(#oShade)"/>
-    <ellipse cx="24" cy="38" rx="13" ry="5.5" fill="url(#oCaustic)"/>
-    <ellipse cx="24" cy="14" rx="15.5" ry="9.5" fill="url(#oGloss)"/>
-    <circle cx="34.5" cy="10.5" r="1.6" fill="#fff" fill-opacity=".9"/>
-    <circle cx="24" cy="24" r="21.4" fill="none" stroke="#fff" stroke-opacity=".85" stroke-width="1.2"/>
-    <circle cx="24" cy="24" r="22.5" fill="none" stroke="#0b3f86" stroke-opacity=".45" stroke-width=".8"/>
+    <path d="M6 9a2.5 2.5 0 0 1 2.5-2.5h10L22 10h17.5a2.5 2.5 0 0 1 2.5 2.5V39a2.5 2.5 0 0 1-2.5 2.5h-31A2.5 2.5 0 0 1 6 39z" fill="url(#faGlassBack)" stroke="#2d67a3" stroke-width=".8"/>
+    <rect x="10.5" y="11.5" width="27" height="22" fill="#eef6fd" stroke="#b5cbe0" stroke-width=".7" transform="rotate(-4 24 22)"/>
+    <rect x="11" y="13" width="27" height="22" fill="#fff" stroke="#b5cbe0" stroke-width=".7" transform="rotate(2 24 24)"/>
+    <path d="M14 18h17M14 21h19M14 24h13" stroke="#9fc0de" stroke-width="1.1" stroke-linecap="round"/>
+    <path d="M4 20a2.5 2.5 0 0 1 2.5-2.5h35A2.5 2.5 0 0 1 44 20l-2 19.5a2.5 2.5 0 0 1-2.5 2.5h-31A2.5 2.5 0 0 1 6 39.5z" fill="url(#faGlassFront)" stroke="#2d67a3" stroke-width=".8"/>
+    <path d="M5.3 19.5h37.4" stroke="#fff" stroke-opacity=".9"/>
+    <path d="M5 19.5h38.6l-.6 5.5C30 23 16 27.5 6 34z" fill="url(#faGloss)" opacity=".8"/>
+    <ellipse cx="24" cy="38.5" rx="15" ry="3" fill="url(#faCaustic)" opacity=".85"/>
   </symbol>
   <symbol id="ic-chip" viewBox="0 0 48 48">
-    <circle cx="24" cy="24" r="22" fill="url(#oGreen)"/>
-    <g transform="translate(24 25.5) scale(0.6) translate(-24 -24)"><g stroke="#2a7a16" stroke-width="2.4" stroke-linecap="round"><path d="M16 6v6M24 6v6M32 6v6M16 36v6M24 36v6M32 36v6M6 16h6M6 24h6M6 32h6M36 16h6M36 24h6M36 32h6"/></g>
-    <rect x="11" y="11" width="26" height="26" rx="3" fill="url(#gLime)" stroke="#2a7a16"/>
-    <rect x="17" y="17" width="14" height="14" rx="1.5" fill="#1d5f10" opacity=".55"/>
-    <path d="M13 14a2 2 0 0 1 2-2h18a2 2 0 0 1 2 2v5c-7 2-15 2-22 0z" fill="url(#gGloss)" opacity=".8"/></g>
-    <circle cx="24" cy="24" r="22" fill="url(#oShade)"/>
-    <ellipse cx="24" cy="38" rx="13" ry="5.5" fill="url(#oCaustic)"/>
-    <ellipse cx="24" cy="14" rx="15.5" ry="9.5" fill="url(#oGloss)"/>
-    <circle cx="34.5" cy="10.5" r="1.6" fill="#fff" fill-opacity=".9"/>
-    <circle cx="24" cy="24" r="21.4" fill="none" stroke="#fff" stroke-opacity=".85" stroke-width="1.2"/>
-    <circle cx="24" cy="24" r="22.5" fill="none" stroke="#0b3f86" stroke-opacity=".45" stroke-width=".8"/>
+    <use href="#faGearSmall" fill="#124a8a" fill-opacity=".45" fill-rule="evenodd" transform="translate(0 1.4)" mask="url(#faMaskGearS)"/>
+    <use href="#faGearSmall" fill="url(#faGear)" stroke="#0f4b92" stroke-width=".7" fill-rule="evenodd"/>
+    <ellipse cx="34" cy="8.5" rx="9" ry="5" fill="url(#faGloss)" opacity=".7" clip-path="url(#faGearSmallClip)"/>
+    <use href="#faGearBig" fill="#124a8a" fill-opacity=".45" fill-rule="evenodd" transform="translate(0 1.8)" mask="url(#faMaskGearB)"/>
+    <use href="#faGearBig" fill="url(#faGear)" stroke="#0f4b92" stroke-width=".8" fill-rule="evenodd"/>
+    <circle cx="20" cy="27" r="8" fill="none" stroke="#fff" stroke-opacity=".45" stroke-width="1.1"/>
+    <ellipse cx="19" cy="18" rx="15" ry="8" fill="url(#faGloss)" opacity=".75" clip-path="url(#faGearBigClip)"/>
+    <ellipse cx="20" cy="38" rx="10" ry="3.5" fill="url(#faCaustic)" clip-path="url(#faGearBigClip)"/>
   </symbol>
   <symbol id="ic-cap" viewBox="0 0 48 48">
-    <circle cx="24" cy="24" r="22" fill="url(#oAmber)"/>
-    <g transform="translate(24 25.5) scale(0.64) translate(-24 -24)"><path d="M12 23v9c0 4 5.4 7 12 7s12-3 12-7v-9" fill="url(#gNavy)" stroke="#0b1c3d"/>
-    <path d="M2 18L24 8l22 10-22 10z" fill="url(#gNavy)" stroke="#0b1c3d"/>
-    <path d="M8 18L24 11l16 7" fill="none" stroke="#fff" stroke-opacity=".55" stroke-width="1.5"/>
-    <path d="M40 20v11" stroke="#ffd54f" stroke-width="2"/><circle cx="40" cy="33" r="2.6" fill="#ffd54f" stroke="#a36d06"/></g>
-    <circle cx="24" cy="24" r="22" fill="url(#oShade)"/>
-    <ellipse cx="24" cy="38" rx="13" ry="5.5" fill="url(#oCaustic)"/>
-    <ellipse cx="24" cy="14" rx="15.5" ry="9.5" fill="url(#oGloss)"/>
-    <circle cx="34.5" cy="10.5" r="1.6" fill="#fff" fill-opacity=".9"/>
-    <circle cx="24" cy="24" r="21.4" fill="none" stroke="#fff" stroke-opacity=".85" stroke-width="1.2"/>
-    <circle cx="24" cy="24" r="22.5" fill="none" stroke="#0b3f86" stroke-opacity=".45" stroke-width=".8"/>
+    <path d="M13 22v9.5c0 3.6 4.9 6.5 11 6.5s11-2.9 11-6.5V22" fill="url(#faNavy)" stroke="#0d1f3a" stroke-width=".8" mask="url(#faMaskBoard)"/>
+    <path d="M15 31.5c2 2.6 5.3 3.8 9 3.8" fill="none" stroke="#fff" stroke-opacity=".3"/>
+    <path d="M2.5 19.5L24 29.5l21.5-10v2.2L24 32 2.5 21.7z" fill="#0e213f" fill-opacity=".55" stroke="#0d1f3a" stroke-width=".6" stroke-linejoin="round"/>
+    <path d="M2.5 19.5L24 9.5l21.5 10L24 29.5z" fill="url(#faNavy)" stroke="#0d1f3a" stroke-width=".8" stroke-linejoin="round"/>
+    <path d="M7 19.3L24 11.4l17 7.9c-11 2.6-23 2.6-34 0z" fill="url(#faGloss)" opacity=".55"/>
+    <path d="M24 19.5l15 3.2v9" fill="none" stroke="url(#faGold)" stroke-width="1.7" stroke-linecap="round"/>
+    <ellipse cx="24" cy="19.5" rx="2.2" ry="1.3" fill="url(#faGold)" stroke="#8a6416" stroke-width=".5"/>
+    <path d="M37.1 31h3.8l1.1 6.5h-6z" fill="url(#faGold)" stroke="#8a6416" stroke-width=".6" stroke-linejoin="round"/>
+    <ellipse cx="24" cy="35" rx="8" ry="2.4" fill="url(#faCaustic)" opacity=".7"/>
   </symbol>
   <symbol id="ic-note" viewBox="0 0 48 48">
-    <circle cx="24" cy="24" r="22" fill="url(#oPink)"/>
-    <g transform="translate(24 25.5) scale(0.62) translate(-24 -24)"><path d="M18 34V10l22-5v24" fill="none" stroke="#0a6a9c" stroke-width="3.2" stroke-linejoin="round"/>
-    <path d="M18 14l22-5" stroke="#0a6a9c" stroke-width="5"/>
-    <ellipse cx="12.5" cy="35" rx="7" ry="5.4" fill="url(#gAqua)" stroke="#0a6a9c" transform="rotate(-18 12.5 35)"/>
-    <ellipse cx="34.5" cy="30" rx="7" ry="5.4" fill="url(#gAqua)" stroke="#0a6a9c" transform="rotate(-18 34.5 30)"/>
-    <ellipse cx="11" cy="33" rx="3.2" ry="1.6" fill="#fff" opacity=".8" transform="rotate(-18 11 33)"/>
-    <ellipse cx="33" cy="28" rx="3.2" ry="1.6" fill="#fff" opacity=".8" transform="rotate(-18 33 28)"/></g>
-    <circle cx="24" cy="24" r="22" fill="url(#oShade)"/>
-    <ellipse cx="24" cy="38" rx="13" ry="5.5" fill="url(#oCaustic)"/>
-    <ellipse cx="24" cy="14" rx="15.5" ry="9.5" fill="url(#oGloss)"/>
-    <circle cx="34.5" cy="10.5" r="1.6" fill="#fff" fill-opacity=".9"/>
-    <circle cx="24" cy="24" r="21.4" fill="none" stroke="#fff" stroke-opacity=".85" stroke-width="1.2"/>
-    <circle cx="24" cy="24" r="22.5" fill="none" stroke="#0b3f86" stroke-opacity=".45" stroke-width=".8"/>
+    <g opacity=".8">
+      <g fill="none" stroke="#653719" stroke-width="1.6" stroke-linejoin="round">
+      <path d="M27 5.5h4V33h-4z"/>
+      <path d="M31 5.5c.8 6 8.8 7.4 10 15.4.5 3.6-.8 7.2-2.8 9.4.8-3.2 1.2-6.2-.8-8.8-2.2-2.8-4.4-4-6.4-4.6z"/>
+      <ellipse cx="21" cy="34" rx="8.8" ry="6.4" transform="rotate(-24 21 34)"/>
+      </g>
+      <g fill="url(#faBronzeSolid)">
+      <path d="M27 5.5h4V33h-4z"/>
+      <path d="M31 5.5c.8 6 8.8 7.4 10 15.4.5 3.6-.8 7.2-2.8 9.4.8-3.2 1.2-6.2-.8-8.8-2.2-2.8-4.4-4-6.4-4.6z"/>
+      <ellipse cx="21" cy="34" rx="8.8" ry="6.4" transform="rotate(-24 21 34)"/>
+      </g>
+    </g>
+    <path d="M28 7v24" stroke="#fff" stroke-opacity=".55" stroke-width="1"/>
+    <ellipse cx="18.6" cy="31.4" rx="4.6" ry="2" fill="#fff" fill-opacity=".6" transform="rotate(-24 18.6 31.4)"/>
+    <path d="M32 8c1.6 3.6 6 5 7.6 9.4" fill="none" stroke="#fff" stroke-opacity=".5" stroke-linecap="round"/>
+    <ellipse cx="23.5" cy="37.2" rx="5" ry="1.8" fill="url(#faCaustic)" transform="rotate(-24 23.5 37.2)"/>
   </symbol>
   <symbol id="ic-mail" viewBox="0 0 48 48">
-    <circle cx="24" cy="24" r="22" fill="url(#oGreen)"/>
-    <g transform="translate(24 25.5) scale(0.64) translate(-24 -24)"><rect x="4" y="10" width="40" height="28" rx="3" fill="url(#gPaper)" stroke="#2b6cb0"/>
-    <path d="M5 12l19 15 19-15" fill="none" stroke="#2b6cb0" stroke-width="1.6"/>
-    <path d="M5 37l14-12M43 37L29 25" stroke="#2b6cb0" stroke-opacity=".6"/>
-    <circle cx="38" cy="12" r="7" fill="url(#gLime)" stroke="#2a7a16"/>
-    <path d="M35 12l2 2 4-4" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round"/></g>
-    <circle cx="24" cy="24" r="22" fill="url(#oShade)"/>
-    <ellipse cx="24" cy="38" rx="13" ry="5.5" fill="url(#oCaustic)"/>
-    <ellipse cx="24" cy="14" rx="15.5" ry="9.5" fill="url(#oGloss)"/>
-    <circle cx="34.5" cy="10.5" r="1.6" fill="#fff" fill-opacity=".9"/>
-    <circle cx="24" cy="24" r="21.4" fill="none" stroke="#fff" stroke-opacity=".85" stroke-width="1.2"/>
-    <circle cx="24" cy="24" r="22.5" fill="none" stroke="#0b3f86" stroke-opacity=".45" stroke-width=".8"/>
+    <path d="M4 14.5L44 10v26.5L4 41z" fill="#3d73ad" fill-opacity=".45" transform="translate(0 1.6)" stroke="#3d73ad" stroke-opacity=".45" stroke-linejoin="round" mask="url(#faMaskMail)"/>
+    <path d="M4 14.5L44 10v26.5L4 41z" fill="url(#faEnvelope)" stroke="#3672b0" stroke-width=".9" stroke-linejoin="round"/>
+    <path d="M4.6 40.3L21.5 26.5M43.4 36.2L28 24.5" fill="none" stroke="#3672b0" stroke-opacity=".5" stroke-width=".9"/>
+    <path d="M4 14.5L44 10 25 28.5z" fill="url(#faFlap)" stroke="#3672b0" stroke-width=".9" stroke-linejoin="round"/>
+    <path d="M6.5 15.2l34.8-3.9" stroke="#fff" stroke-width=".9"/>
+    <path d="M5 15.5L43 11.3l-6 5.8C26 15.5 15 19 8 24z" fill="url(#faGloss)" opacity=".55"/>
+    <ellipse cx="24" cy="36.5" rx="15" ry="3" fill="url(#faCaustic)" opacity=".75" transform="rotate(-6 24 36.5)"/>
   </symbol>
   <symbol id="ic-clear" viewBox="0 0 48 48">
-    <circle cx="24" cy="24" r="22" fill="url(#oBlue)"/>
-    <g transform="translate(24 25.5) scale(0.6) translate(-24 -24)"><rect x="6" y="8" width="36" height="32" rx="3" fill="#05080d" stroke="#0a3f8f" stroke-width="2"/>
-    <path d="M30 14l6 6-14 14h-6l-3-3z" fill="url(#gAqua)" stroke="#0a6a9c"/></g>
-    <circle cx="24" cy="24" r="22" fill="url(#oShade)"/>
-    <ellipse cx="24" cy="38" rx="13" ry="5.5" fill="url(#oCaustic)"/>
-    <ellipse cx="24" cy="14" rx="15.5" ry="9.5" fill="url(#oGloss)"/>
-    <circle cx="34.5" cy="10.5" r="1.6" fill="#fff" fill-opacity=".9"/>
-    <circle cx="24" cy="24" r="21.4" fill="none" stroke="#fff" stroke-opacity=".85" stroke-width="1.2"/>
-    <circle cx="24" cy="24" r="22.5" fill="none" stroke="#0b3f86" stroke-opacity=".45" stroke-width=".8"/>
+    <g stroke-width=".8" stroke-linejoin="round" transform="translate(25 23) scale(1.18) translate(-25 -23)">
+      <path d="M10 24l12 7v6l-12-7z" fill="url(#faRoseSide)" stroke="#7a3446"/>
+      <path d="M22 31l9.9-7.7v6L22 37z" fill="url(#faRoseFront)" stroke="#7a3446"/>
+      <path d="M31.9 23.3L40 17v6l-8.1 6.3z" fill="url(#faSleeveFront)" stroke="#1e4f8a"/>
+      <path d="M10 24l9.9-7.7 12 7L22 31z" fill="url(#faRoseTop)" stroke="#7a3446"/>
+      <path d="M19.9 16.3L28 10l12 7-8.1 6.3z" fill="url(#faSleeveTop)" stroke="#1e4f8a"/>
+    </g>
+    <path d="M11.5 24l8.4-6.5M21.4 16.9L28 11.7" stroke="#fff" stroke-opacity=".9" stroke-linecap="round" transform="translate(25 23) scale(1.18) translate(-25 -23)"/>
   </symbol>
   <symbol id="ic-help" viewBox="0 0 48 48">
-    <circle cx="24" cy="24" r="22" fill="url(#oBlue)"/>
-    <g transform="translate(24 25.5) scale(0.72) translate(-24 -24)"><path d="M17 18a7 7 0 1 1 10 6.3c-1.9.9-3 2.3-3 4.2V31" fill="none" stroke="#fff" stroke-width="4.4" stroke-linecap="round"/><circle cx="24" cy="38.5" r="3.1" fill="#fff"/></g>
-    <circle cx="24" cy="24" r="22" fill="url(#oShade)"/>
-    <ellipse cx="24" cy="38" rx="13" ry="5.5" fill="url(#oCaustic)"/>
-    <ellipse cx="24" cy="14" rx="15.5" ry="9.5" fill="url(#oGloss)"/>
-    <circle cx="34.5" cy="10.5" r="1.6" fill="#fff" fill-opacity=".9"/>
-    <circle cx="24" cy="24" r="21.4" fill="none" stroke="#fff" stroke-opacity=".85" stroke-width="1.2"/>
-    <circle cx="24" cy="24" r="22.5" fill="none" stroke="#0b3f86" stroke-opacity=".45" stroke-width=".8"/>
+    <circle cx="24" cy="25.5" r="21" fill="#8496aa" fill-opacity=".5" mask="url(#faMaskHelp)"/>
+    <path d="M24 3a21 21 0 1 1 0 42a21 21 0 1 1 0-42zM24 8a16 16 0 1 0 0 32a16 16 0 1 0 0-32z" fill="url(#faRing)" fill-rule="evenodd" stroke="#8597ab" stroke-width=".8"/>
+    <circle cx="24" cy="24" r="16" fill="url(#faBlueDisc)" stroke="#1b5aa3" stroke-width=".8"/>
+    <path d="M18.5 19a5.5 5.5 0 1 1 7.9 5c-1.5.8-2.4 1.9-2.4 3.4v1.3" fill="none" stroke="#123f75" stroke-opacity=".45" stroke-width="3.8" stroke-linecap="round" transform="translate(0 1)"/>
+    <path d="M18.5 19a5.5 5.5 0 1 1 7.9 5c-1.5.8-2.4 1.9-2.4 3.4v1.3" fill="none" stroke="#fff" stroke-width="3.8" stroke-linecap="round"/>
+    <circle cx="24" cy="34" r="2.4" fill="#fff"/>
+    <ellipse cx="24" cy="15.5" rx="12" ry="6.5" fill="url(#faGloss)" opacity=".75"/>
+    <ellipse cx="24" cy="34" rx="10" ry="4" fill="url(#faCaustic)" opacity=".85"/><circle cx="33" cy="11" r="1.4" fill="#fff"/>
   </symbol>
   <symbol id="ic-globe" viewBox="0 0 48 48">
-    <circle cx="24" cy="24" r="22" fill="url(#oBlue)"/>
-    <g transform="translate(24 25.5) scale(0.92) translate(-24 -24)"><g fill="none" stroke="#fff" stroke-opacity=".9" stroke-width="1.8"><circle cx="24" cy="24" r="19"/><path d="M5 24h38M9 14h30M9 34h30M24 5c7 6 7 32 0 38M24 5c-7 6-7 32 0 38"/></g></g>
-    <circle cx="24" cy="24" r="22" fill="url(#oShade)"/>
-    <ellipse cx="24" cy="38" rx="13" ry="5.5" fill="url(#oCaustic)"/>
-    <ellipse cx="24" cy="14" rx="15.5" ry="9.5" fill="url(#oGloss)"/>
-    <circle cx="34.5" cy="10.5" r="1.6" fill="#fff" fill-opacity=".9"/>
-    <circle cx="24" cy="24" r="21.4" fill="none" stroke="#fff" stroke-opacity=".85" stroke-width="1.2"/>
-    <circle cx="24" cy="24" r="22.5" fill="none" stroke="#0b3f86" stroke-opacity=".45" stroke-width=".8"/>
+    <circle cx="24" cy="25.4" r="20" fill="#25685c" fill-opacity=".5" mask="url(#faMaskGlobe)"/>
+    <circle cx="24" cy="24" r="20" fill="url(#faTeal)" stroke="#2a6d61" stroke-width=".8"/>
+    <g clip-path="url(#faGlobeClip)" fill="none" stroke="#effffb" stroke-opacity=".7" stroke-width="1.3">
+      <path d="M4 24h40M6 14.5h36M6 33.5h36M24 4v40"/>
+      <ellipse cx="24" cy="24" rx="9" ry="20"/>
+    </g>
+    <circle cx="24" cy="24" r="19.2" fill="none" stroke="#fff" stroke-opacity=".55" stroke-width=".8"/>
+    <ellipse cx="22.5" cy="13.5" rx="13" ry="7.5" fill="url(#faGloss)" opacity=".8"/>
+    <ellipse cx="24" cy="37" rx="12" ry="5" fill="url(#faCaustic)" opacity=".85"/><circle cx="33.5" cy="10.5" r="1.5" fill="#fff"/>
   </symbol>
   <symbol id="ic-power" viewBox="0 0 48 48">
-    <circle cx="24" cy="24" r="22" fill="url(#oAmber)"/>
-    <g transform="translate(24 25.5) scale(0.72) translate(-24 -24)"><path d="M15.5 15a12.5 12.5 0 1 0 17 0" fill="none" stroke="#fff" stroke-width="4.4" stroke-linecap="round"/><path d="M24 8.5v14" stroke="#fff" stroke-width="4.4" stroke-linecap="round"/></g>
-    <circle cx="24" cy="24" r="22" fill="url(#oShade)"/>
-    <ellipse cx="24" cy="38" rx="13" ry="5.5" fill="url(#oCaustic)"/>
-    <ellipse cx="24" cy="14" rx="15.5" ry="9.5" fill="url(#oGloss)"/>
-    <circle cx="34.5" cy="10.5" r="1.6" fill="#fff" fill-opacity=".9"/>
-    <circle cx="24" cy="24" r="21.4" fill="none" stroke="#fff" stroke-opacity=".85" stroke-width="1.2"/>
-    <circle cx="24" cy="24" r="22.5" fill="none" stroke="#0b3f86" stroke-opacity=".45" stroke-width=".8"/>
-  </symbol>
-  <symbol id="ic-term-s" viewBox="0 0 48 48">
-    <circle cx="24" cy="24" r="23" fill="url(#oNavy)"/>
-    <g transform="translate(24 24.5) scale(0.84) translate(-24 -24)"><rect x="3" y="6" width="42" height="34" rx="4" fill="url(#gBlue)" stroke="#0a3f8f"/>
-    <rect x="7" y="10" width="34" height="24" rx="1.5" fill="#05080d"/>
-    <path d="M11 16l5 4-5 4" fill="none" stroke="#55FF55" stroke-width="2.4" stroke-linecap="square"/>
-    <rect x="19" y="23" width="9" height="2.4" fill="#55FF55"/>
-    <rect x="15" y="40" width="18" height="4" rx="1" fill="url(#gBlue)" stroke="#0a3f8f"/>
-    <path d="M5 10a3 3 0 0 1 3-3h32a3 3 0 0 1 3 3v6c-12 3-26 3-38 0z" fill="url(#gGloss)" opacity=".55"/></g>
-    <ellipse cx="24" cy="12" rx="15" ry="8" fill="url(#oGloss)" opacity=".75"/>
-    <circle cx="24" cy="24" r="22.6" fill="none" stroke="#0b3f86" stroke-opacity=".55" stroke-width="1.6"/>
-  </symbol>
-  <symbol id="ic-profile-s" viewBox="0 0 48 48">
-    <circle cx="24" cy="24" r="23" fill="url(#oBlue)"/>
-    <g transform="translate(24 24.5) scale(0.86) translate(-24 -24)"><path d="M10 4h20l9 9v29a2 2 0 0 1-2 2H10a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2z" fill="url(#gPaper)" stroke="#2b6cb0"/>
-    <path d="M30 4v9h9" fill="#cfe6fb" stroke="#2b6cb0"/>
-    <circle cx="19" cy="19" r="5.5" fill="url(#gAqua)" stroke="#0a6a9c"/>
-    <path d="M11 33c0-5 3.6-8 8-8s8 3 8 8z" fill="url(#gAqua)" stroke="#0a6a9c"/>
-    <path d="M14 38h20M14 41h14" stroke="#7fa6cf" stroke-width="1.6" stroke-linecap="round"/>
-    <path d="M28 21h6M28 25h6" stroke="#7fa6cf" stroke-width="1.6" stroke-linecap="round"/></g>
-    <ellipse cx="24" cy="12" rx="15" ry="8" fill="url(#oGloss)" opacity=".75"/>
-    <circle cx="24" cy="24" r="22.6" fill="none" stroke="#0b3f86" stroke-opacity=".55" stroke-width="1.6"/>
-  </symbol>
-  <symbol id="ic-case-s" viewBox="0 0 48 48">
-    <circle cx="24" cy="24" r="23" fill="url(#oBlue)"/>
-    <g transform="translate(24 24.5) scale(0.84) translate(-24 -24)"><path d="M17 13v-3a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v3" fill="none" stroke="#7a3d0a" stroke-width="2.5"/>
-    <rect x="4" y="13" width="40" height="28" rx="3.5" fill="url(#gAmber)" stroke="#7a3d0a"/>
-    <path d="M4 24h40" stroke="#7a3d0a" stroke-opacity=".55"/>
-    <rect x="20" y="21" width="8" height="6" rx="1" fill="#ffe6b8" stroke="#7a3d0a"/>
-    <path d="M6 16a2 2 0 0 1 2-2h32a2 2 0 0 1 2 2v4c-12 2-24 2-36 0z" fill="url(#gGloss)" opacity=".7"/></g>
-    <ellipse cx="24" cy="12" rx="15" ry="8" fill="url(#oGloss)" opacity=".75"/>
-    <circle cx="24" cy="24" r="22.6" fill="none" stroke="#0b3f86" stroke-opacity=".55" stroke-width="1.6"/>
-  </symbol>
-  <symbol id="ic-folder-s" viewBox="0 0 48 48">
-    <circle cx="24" cy="24" r="23" fill="url(#oBlue)"/>
-    <g transform="translate(24 24.5) scale(0.86) translate(-24 -24)"><path d="M4 12a3 3 0 0 1 3-3h11l4 4h19a3 3 0 0 1 3 3v22a3 3 0 0 1-3 3H7a3 3 0 0 1-3-3z" fill="url(#gFolderBack)" stroke="#a36d06"/>
-    <rect x="9" y="15" width="30" height="16" fill="#fff" stroke="#c9d8e6"/>
-    <path d="M3 21a2 2 0 0 1 2-2h38a2 2 0 0 1 2 2l-2 17a3 3 0 0 1-3 3H8a3 3 0 0 1-3-3z" fill="url(#gFolderFront)" stroke="#a36d06"/>
-    <path d="M5.5 22h37l-.6 5c-12 2-24 2-36 0z" fill="url(#gGloss)" opacity=".75"/></g>
-    <ellipse cx="24" cy="12" rx="15" ry="8" fill="url(#oGloss)" opacity=".75"/>
-    <circle cx="24" cy="24" r="22.6" fill="none" stroke="#0b3f86" stroke-opacity=".55" stroke-width="1.6"/>
-  </symbol>
-  <symbol id="ic-chip-s" viewBox="0 0 48 48">
-    <circle cx="24" cy="24" r="23" fill="url(#oGreen)"/>
-    <g transform="translate(24 24.5) scale(0.82) translate(-24 -24)"><g stroke="#2a7a16" stroke-width="2.4" stroke-linecap="round"><path d="M16 6v6M24 6v6M32 6v6M16 36v6M24 36v6M32 36v6M6 16h6M6 24h6M6 32h6M36 16h6M36 24h6M36 32h6"/></g>
-    <rect x="11" y="11" width="26" height="26" rx="3" fill="url(#gLime)" stroke="#2a7a16"/>
-    <rect x="17" y="17" width="14" height="14" rx="1.5" fill="#1d5f10" opacity=".55"/>
-    <path d="M13 14a2 2 0 0 1 2-2h18a2 2 0 0 1 2 2v5c-7 2-15 2-22 0z" fill="url(#gGloss)" opacity=".8"/></g>
-    <ellipse cx="24" cy="12" rx="15" ry="8" fill="url(#oGloss)" opacity=".75"/>
-    <circle cx="24" cy="24" r="22.6" fill="none" stroke="#0b3f86" stroke-opacity=".55" stroke-width="1.6"/>
-  </symbol>
-  <symbol id="ic-cap-s" viewBox="0 0 48 48">
-    <circle cx="24" cy="24" r="23" fill="url(#oAmber)"/>
-    <g transform="translate(24 24.5) scale(0.86) translate(-24 -24)"><path d="M12 23v9c0 4 5.4 7 12 7s12-3 12-7v-9" fill="url(#gNavy)" stroke="#0b1c3d"/>
-    <path d="M2 18L24 8l22 10-22 10z" fill="url(#gNavy)" stroke="#0b1c3d"/>
-    <path d="M8 18L24 11l16 7" fill="none" stroke="#fff" stroke-opacity=".55" stroke-width="1.5"/>
-    <path d="M40 20v11" stroke="#ffd54f" stroke-width="2"/><circle cx="40" cy="33" r="2.6" fill="#ffd54f" stroke="#a36d06"/></g>
-    <ellipse cx="24" cy="12" rx="15" ry="8" fill="url(#oGloss)" opacity=".75"/>
-    <circle cx="24" cy="24" r="22.6" fill="none" stroke="#0b3f86" stroke-opacity=".55" stroke-width="1.6"/>
-  </symbol>
-  <symbol id="ic-note-s" viewBox="0 0 48 48">
-    <circle cx="24" cy="24" r="23" fill="url(#oPink)"/>
-    <g transform="translate(24 24.5) scale(0.84) translate(-24 -24)"><path d="M18 34V10l22-5v24" fill="none" stroke="#0a6a9c" stroke-width="3.2" stroke-linejoin="round"/>
-    <path d="M18 14l22-5" stroke="#0a6a9c" stroke-width="5"/>
-    <ellipse cx="12.5" cy="35" rx="7" ry="5.4" fill="url(#gAqua)" stroke="#0a6a9c" transform="rotate(-18 12.5 35)"/>
-    <ellipse cx="34.5" cy="30" rx="7" ry="5.4" fill="url(#gAqua)" stroke="#0a6a9c" transform="rotate(-18 34.5 30)"/>
-    <ellipse cx="11" cy="33" rx="3.2" ry="1.6" fill="#fff" opacity=".8" transform="rotate(-18 11 33)"/>
-    <ellipse cx="33" cy="28" rx="3.2" ry="1.6" fill="#fff" opacity=".8" transform="rotate(-18 33 28)"/></g>
-    <ellipse cx="24" cy="12" rx="15" ry="8" fill="url(#oGloss)" opacity=".75"/>
-    <circle cx="24" cy="24" r="22.6" fill="none" stroke="#0b3f86" stroke-opacity=".55" stroke-width="1.6"/>
-  </symbol>
-  <symbol id="ic-mail-s" viewBox="0 0 48 48">
-    <circle cx="24" cy="24" r="23" fill="url(#oGreen)"/>
-    <g transform="translate(24 24.5) scale(0.86) translate(-24 -24)"><rect x="4" y="10" width="40" height="28" rx="3" fill="url(#gPaper)" stroke="#2b6cb0"/>
-    <path d="M5 12l19 15 19-15" fill="none" stroke="#2b6cb0" stroke-width="1.6"/>
-    <path d="M5 37l14-12M43 37L29 25" stroke="#2b6cb0" stroke-opacity=".6"/>
-    <circle cx="38" cy="12" r="7" fill="url(#gLime)" stroke="#2a7a16"/>
-    <path d="M35 12l2 2 4-4" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round"/></g>
-    <ellipse cx="24" cy="12" rx="15" ry="8" fill="url(#oGloss)" opacity=".75"/>
-    <circle cx="24" cy="24" r="22.6" fill="none" stroke="#0b3f86" stroke-opacity=".55" stroke-width="1.6"/>
-  </symbol>
-  <symbol id="ic-clear-s" viewBox="0 0 48 48">
-    <circle cx="24" cy="24" r="23" fill="url(#oBlue)"/>
-    <g transform="translate(24 24.5) scale(0.82) translate(-24 -24)"><rect x="6" y="8" width="36" height="32" rx="3" fill="#05080d" stroke="#0a3f8f" stroke-width="2"/>
-    <path d="M30 14l6 6-14 14h-6l-3-3z" fill="url(#gAqua)" stroke="#0a6a9c"/></g>
-    <ellipse cx="24" cy="12" rx="15" ry="8" fill="url(#oGloss)" opacity=".75"/>
-    <circle cx="24" cy="24" r="22.6" fill="none" stroke="#0b3f86" stroke-opacity=".55" stroke-width="1.6"/>
-  </symbol>
-  <symbol id="ic-help-s" viewBox="0 0 48 48">
-    <circle cx="24" cy="24" r="23" fill="url(#oBlue)"/>
-    <g transform="translate(24 24.5) scale(0.8) translate(-24 -24)"><path d="M17 18a7 7 0 1 1 10 6.3c-1.9.9-3 2.3-3 4.2V31" fill="none" stroke="#fff" stroke-width="4.4" stroke-linecap="round"/><circle cx="24" cy="38.5" r="3.1" fill="#fff"/></g>
-    <ellipse cx="24" cy="12" rx="15" ry="8" fill="url(#oGloss)" opacity=".75"/>
-    <circle cx="24" cy="24" r="22.6" fill="none" stroke="#0b3f86" stroke-opacity=".55" stroke-width="1.6"/>
-  </symbol>
-  <symbol id="ic-globe-s" viewBox="0 0 48 48">
-    <circle cx="24" cy="24" r="23" fill="url(#oBlue)"/>
-    <g transform="translate(24 24.5) scale(0.95) translate(-24 -24)"><g fill="none" stroke="#fff" stroke-opacity=".9" stroke-width="1.8"><circle cx="24" cy="24" r="19"/><path d="M5 24h38M9 14h30M9 34h30M24 5c7 6 7 32 0 38M24 5c-7 6-7 32 0 38"/></g></g>
-    <ellipse cx="24" cy="12" rx="15" ry="8" fill="url(#oGloss)" opacity=".75"/>
-    <circle cx="24" cy="24" r="22.6" fill="none" stroke="#0b3f86" stroke-opacity=".55" stroke-width="1.6"/>
-  </symbol>
-  <symbol id="ic-power-s" viewBox="0 0 48 48">
-    <circle cx="24" cy="24" r="23" fill="url(#oAmber)"/>
-    <g transform="translate(24 24.5) scale(0.8) translate(-24 -24)"><path d="M15.5 15a12.5 12.5 0 1 0 17 0" fill="none" stroke="#fff" stroke-width="4.4" stroke-linecap="round"/><path d="M24 8.5v14" stroke="#fff" stroke-width="4.4" stroke-linecap="round"/></g>
-    <ellipse cx="24" cy="12" rx="15" ry="8" fill="url(#oGloss)" opacity=".75"/>
-    <circle cx="24" cy="24" r="22.6" fill="none" stroke="#0b3f86" stroke-opacity=".55" stroke-width="1.6"/>
+    <rect x="4" y="10" width="40" height="32" rx="8" fill="url(#faRedEdge)" mask="url(#faMaskPower)"/>
+    <rect x="4" y="6.5" width="40" height="32" rx="8" fill="url(#faRed)" stroke="#8d3534" stroke-width=".8"/>
+    <rect x="5.2" y="7.7" width="37.6" height="29.6" rx="7" fill="none" stroke="#fff" stroke-opacity=".5" stroke-width=".8"/>
+    <g fill="none" stroke-width="3" stroke-linecap="round" transform="translate(0 1)" stroke="#7a2726" stroke-opacity=".5"><path d="M18 17a8.4 8.4 0 1 0 12 0"/><path d="M24 13v9"/></g>
+    <g fill="none" stroke-width="3" stroke-linecap="round" stroke="#fff"><path d="M18 17a8.4 8.4 0 1 0 12 0"/><path d="M24 13v9"/></g>
+    <path d="M5.5 15a7.5 7.5 0 0 1 7.5-7.5h22a7.5 7.5 0 0 1 7.5 7.5v1.5c-12 4-25 4-37 0z" fill="url(#faGloss)" opacity=".7"/>
+    <ellipse cx="24" cy="33.5" rx="15" ry="3.2" fill="url(#faCaustic)" opacity=".75"/>
   </symbol>
   <symbol id="ic-orb" viewBox="0 0 48 48">
     <circle cx="24" cy="24" r="21" fill="url(#gAqua)" stroke="#fff" stroke-width="2"/>
@@ -330,7 +240,7 @@
 
   <section class="win" id="winTerm" data-win="term" hidden>
     <header class="titlebar">
-      <svg class="i" aria-hidden="true"><use href="#ic-term-s"/></svg>
+      <svg class="i" aria-hidden="true"><use href="#ic-term"/></svg>
       <span class="ttl" id="termTitle"></span>
       <div class="caps">
         <button data-act="min" data-i18n-aria="minimize"><svg aria-hidden="true"><use href="#g-min"/></svg></button>
@@ -366,7 +276,7 @@
 
   <section class="win" id="winEasy" data-win="easy" hidden>
     <header class="titlebar">
-      <svg class="i" aria-hidden="true"><use href="#ic-profile-s"/></svg>
+      <svg class="i" aria-hidden="true"><use href="#ic-profile"/></svg>
       <span class="ttl" data-i18n="easyTitle"></span>
       <div class="caps">
         <button data-act="min" data-i18n-aria="minimize"><svg aria-hidden="true"><use href="#g-min"/></svg></button>
@@ -381,9 +291,9 @@
       <label class="esearch"><span class="sr-only" data-i18n="searchEasy"></span><input id="easySearch" type="search" autocomplete="off"><svg aria-hidden="true"><use href="#g-search"/></svg></label>
     </div>
     <div class="cmdbar" role="toolbar">
-      <button class="cbtn" data-go="terminal"><svg class="i" aria-hidden="true"><use href="#ic-term-s"/></svg><span data-i18n="openTerminal"></span></button>
-      <button class="cbtn" data-go="contact"><svg class="i" aria-hidden="true"><use href="#ic-mail-s"/></svg><span data-i18n="contactMe"></span></button>
-      <button class="cbtn" data-lang-toggle><svg class="i" aria-hidden="true"><use href="#ic-globe-s"/></svg><span data-i18n="switchLang"></span></button>
+      <button class="cbtn" data-go="terminal"><svg class="i" aria-hidden="true"><use href="#ic-term"/></svg><span data-i18n="openTerminal"></span></button>
+      <button class="cbtn" data-go="contact"><svg class="i" aria-hidden="true"><use href="#ic-mail"/></svg><span data-i18n="contactMe"></span></button>
+      <button class="cbtn" data-lang-toggle><svg class="i" aria-hidden="true"><use href="#ic-globe"/></svg><span data-i18n="switchLang"></span></button>
     </div>
     <div class="easy-body">
       <nav class="navpane" id="navpane"></nav>
@@ -396,8 +306,8 @@
 <nav class="taskbar" id="taskbar">
   <button class="orb" id="start" aria-expanded="false" aria-controls="startmenu" data-i18n-aria="start"><svg aria-hidden="true"><use href="#ic-orb"/></svg></button>
   <div class="tasks">
-    <button class="task" data-task="easy" style="--glow: 90, 180, 255" data-i18n-aria="easyTask"><svg class="i" aria-hidden="true"><use href="#ic-profile-s"/></svg></button>
-    <button class="task" data-task="term" style="--glow: 85, 255, 255" data-i18n-aria="cmdTitle"><svg class="i" aria-hidden="true"><use href="#ic-term-s"/></svg></button>
+    <button class="task" data-task="easy" style="--glow: 90, 180, 255" data-i18n-aria="easyTask"><svg class="i" aria-hidden="true"><use href="#ic-profile"/></svg></button>
+    <button class="task" data-task="term" style="--glow: 85, 255, 255" data-i18n-aria="cmdTitle"><svg class="i" aria-hidden="true"><use href="#ic-term"/></svg></button>
   </div>
   <div class="tray">
     <button class="traylang" data-lang-toggle data-i18n="langCode"></button>
@@ -414,12 +324,12 @@
   <div class="sm-right">
     <div class="sm-avatar" aria-hidden="true"><svg><use href="#ic-orb"/></svg></div>
     <ul class="sm-links" id="smLinks"></ul>
-    <button class="sm-shut" id="shutBtn"><span data-i18n="shutDown"></span><svg aria-hidden="true"><use href="#ic-power-s"/></svg></button>
+    <button class="sm-shut" id="shutBtn"><span data-i18n="shutDown"></span><svg aria-hidden="true"><use href="#ic-power"/></svg></button>
   </div>
 </div>
 
 <aside class="balloon" id="balloon" role="status" hidden>
-  <h2><svg class="i" aria-hidden="true"><use href="#ic-profile-s"/></svg><span data-i18n="balloonTitle"></span></h2>
+  <h2><svg class="i" aria-hidden="true"><use href="#ic-profile"/></svg><span data-i18n="balloonTitle"></span></h2>
   <p data-i18n="balloonText"></p>
   <button class="btn green" data-go="overview"><span data-i18n="openEasy"></span></button>
   <button class="x" id="balloonX" data-i18n-aria="dismiss"><svg aria-hidden="true"><use href="#g-close"/></svg></button>

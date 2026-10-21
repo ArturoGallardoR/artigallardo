@@ -45,20 +45,11 @@ svg.i { width: 1em; height: 1em; flex: none; }
 .todo { color: #b0007a; font-weight: 600; }
 
 /* ═════════ ambient layer: a modern take on the retro skin ═════════
-   Pointer parallax on the wallpaper and iridescent bubbles drifting up; both static under reduced motion. */
-.wall {
-  position: fixed; inset: -28px; z-index: 0;
-  background: #3aa6ee url(../assets/wallpaper-1920.webp) center / cover no-repeat;
-  background-image: image-set(url(../assets/wallpaper-1920.webp) 1x, url(../assets/wallpaper-2752.webp) 2x);
-  transform: translate3d(calc(var(--px, 0) * -12px), calc(var(--py, 0) * -9px), 0);
-  transition: transform 700ms var(--ease);
-}
-body.is-mobile .wall { background-image: url(../assets/wallpaper-mobile.webp); /* dedicated portrait crop, 1728x3072 */ }
-.fx {
-  position: fixed; inset: 0; z-index: 0; pointer-events: none; overflow: hidden;
-  transform: translate3d(calc(var(--px, 0) * 20px), calc(var(--py, 0) * 14px), 0);
-  transition: transform 700ms var(--ease);
-}
+   Static wallpaper (an <img> with srcset, so the browser picks the file for the real device-pixel size)
+   and iridescent bubbles drifting up; bubbles are off under reduced motion. */
+.wall { position: fixed; inset: 0; z-index: 0; background: #3aa6ee; }
+.wall img { display: block; width: 100%; height: 100%; object-fit: cover; }
+.fx { position: fixed; inset: 0; z-index: 0; pointer-events: none; overflow: hidden; }
 .bubble {
   position: absolute; bottom: -160px; left: var(--x); width: var(--s); height: var(--s); border-radius: 50%;
   background:
@@ -549,7 +540,7 @@ details.tech dt { color: #4a5d75; }
 .glasscard .btn.green { background: linear-gradient(rgba(150,205,255,.75), rgba(80,150,245,.6) 50%, rgba(36,104,222,.7) 51%, rgba(88,156,250,.7)); }
 .glasscard .btn:active { background: linear-gradient(rgba(0,0,0,.25), rgba(0,0,0,.1)); }
 
-/* app icons: glass orbs floating on the wallpaper, white label with shadow */
+/* app icons: skeuomorphic objects floating on the wallpaper, white label with shadow */
 .appgrid { list-style: none; margin: 0; padding: 0 2px; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 18px 4px; }
 .app {
   width: 100%; display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 0; border: 0; background: none;
