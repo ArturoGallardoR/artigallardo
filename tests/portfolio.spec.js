@@ -97,6 +97,22 @@ test.describe('non-technical visitor (desktop)', () => {
     expect(await cvHref('es')).toMatch(/_ES\.pdf$/);
   });
 
+  test('a project shows who used it and what changed, and links its public presentation safely', async ({ page }) => {
+    await open(page, '?view=easy', '#projects');
+    const mcp = page.locator('#p-odoomcp');
+    await mcp.locator('summary').click();
+    await expect(mcp).toContainText('Who used it');
+    await expect(mcp).toContainText('about 70 people');
+    const link = mcp.getByRole('link', { name: 'odoo.121corp.xyz' });
+    await expect(link).toHaveAttribute('href', 'https://odoo.121corp.xyz/');
+    await expect(link).toHaveAttribute('rel', 'noopener');
+
+    const tickets = page.locator('#p-tickets');
+    await tickets.locator('summary').click();
+    await expect(tickets).toContainText('What changed');
+    await expect(tickets.getByRole('link')).toHaveCount(0);
+  });
+
   test('Easy view search treats typed text as text, never as HTML', async ({ page }) => {
     await open(page, '?view=easy');
     await page.locator('#easySearch').fill('<img src=x onerror=window.__pwned=1>');

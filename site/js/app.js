@@ -46,6 +46,14 @@
   const isBi = (v) => v && typeof v === 'object' && !Array.isArray(v) && 'en' in v && 'es' in v;
   const L = (v) => (isBi(v) ? v[lang] : v);
   const ui = (k) => L(C.ui[k]) ?? k;
+  const projectFacts = (p) => [
+    [ui('problem'), L(p.problem)],
+    [ui('built'), L(p.built)],
+    ...(p.used ? [[ui('usedBy'), L(p.used)]] : []),
+    ...(p.after ? [[ui('changed'), L(p.after)]] : []),
+    [ui('tools'), p.stack],
+    ...(p.link ? [[ui(p.link.kind), `<a href="${esc(p.link.url)}" target="_blank" rel="noopener">${esc(L(p.link.label))}</a>`]] : []),
+  ];
   const T = (v) => (v && v.tbd ? `<span class="todo">[${esc(ui('tbd'))}: ${esc(L(v.tbd))}]</span>` : L(v));
   const SECTIONS = C.sections;
   const sec = (id) => SECTIONS.find((s) => s.id === id);
@@ -86,7 +94,7 @@
   function searchIndex() {
     return [
       ...SECTIONS.map((s) => ({ kind: 'section', target: s.id, icon: s.icon, label: L(s.label), sub: L(s.desc), text: [L(s.label), L(s.desc), L(s.plain)].join(' ') })),
-      ...C.projects.map((p) => ({ kind: 'project', target: p.slug, icon: 'ic-folder', label: L(p.title), sub: L(p.result), text: [L(p.title), L(p.result), L(p.plain), L(p.problem), L(p.built), p.stack].join(' ') })),
+      ...C.projects.map((p) => ({ kind: 'project', target: p.slug, icon: 'ic-folder', label: L(p.title), sub: L(p.result), text: [L(p.title), L(p.result), L(p.plain), L(p.problem), L(p.built), L(p.used), L(p.after), p.stack].join(' ') })),
       ...C.experience.map((e) => ({ kind: 'section', target: 'experience', icon: 'ic-case', label: stripTags(T(e.role)), sub: stripTags(T(e.org)), text: [stripTags(T(e.role)), stripTags(T(e.org)), ...e.points.map((x) => stripTags(L(x)))].join(' ') })),
       ...C.skills.map((g) => ({ kind: 'section', target: 'skills', icon: 'ic-chip', label: L(g.name), sub: L(g.desc), text: [L(g.name), L(g.desc), ...g.items.map(L)].join(' ') })),
     ];
@@ -137,9 +145,7 @@
             <p>${L(p.plain)}</p>
             <details class="tech"><summary>${ui('techDetails')}</summary>
               <dl>
-                <dt>${ui('problem')}</dt><dd>${L(p.problem)}</dd>
-                <dt>${ui('built')}</dt><dd>${L(p.built)}</dd>
-                <dt>${ui('tools')}</dt><dd>${p.stack}</dd>
+                ${projectFacts(p).map(([k, v]) => `<dt>${k}</dt><dd>${v}</dd>`).join('')}
               </dl>
             </details>
           </article>`).join('')}`;
@@ -469,7 +475,7 @@
         return `
           <p class="y b">${L(p.title)}</p>
           <p class="g">${L(p.result)}</p>
-          ${kv([[ui('problem'), L(p.problem)], [ui('built'), L(p.built)], [ui('tools'), p.stack]])}
+          ${kv(projectFacts(p))}
           ${links('projects', ...C.projects.filter((x) => x !== p).slice(0, 2).map((x) => `open ${x.slug}`))}`;
       },
 
@@ -712,7 +718,7 @@
         }));
         case 'projects': return C.projects.map((x) => ({
           key: x.slug, label: L(x.title), help: L(x.plain),
-          detail: () => `<p class="g">${L(x.result)}</p>${kv([[ui('problem'), L(x.problem)], [ui('built'), L(x.built)], [ui('tools'), x.stack]])}`,
+          detail: () => `<p class="g">${L(x.result)}</p>${kv(projectFacts(x))}`,
         }));
         case 'skills': return C.skills.map((g, i) => ({ key: `skill${i}`, label: L(g.name), help: L(g.desc), detail: () => `<p>${L(g.desc)}</p>${bullets(g.items.map(L))}` }));
         case 'education': return [
