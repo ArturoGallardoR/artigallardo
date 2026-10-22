@@ -46,6 +46,7 @@
   const L = (v) => (isBi(v) ? v[lang] : v);
   const ui = (k) => L(C.ui[k]) ?? k;
   const projectFacts = (p) => [
+    ...(p.origin ? [[ui('origin'), L(p.origin)]] : []),
     [ui('problem'), L(p.problem)],
     [ui('built'), L(p.built)],
     ...(p.used ? [[ui('usedBy'), L(p.used)]] : []),
@@ -93,7 +94,7 @@
   function searchIndex() {
     return [
       ...SECTIONS.map((s) => ({ kind: 'section', target: s.id, icon: s.icon, label: L(s.label), sub: L(s.desc), text: [L(s.label), L(s.desc), L(s.plain)].join(' ') })),
-      ...C.projects.map((p) => ({ kind: 'project', target: p.slug, icon: 'ic-folder', label: L(p.title), sub: L(p.result), text: [L(p.title), L(p.result), L(p.plain), L(p.problem), L(p.built), L(p.used), L(p.after), p.stack].join(' ') })),
+      ...C.projects.map((p) => ({ kind: 'project', target: p.slug, icon: 'ic-folder', label: L(p.title), sub: L(p.result), text: [L(p.title), L(p.result), L(p.origin), L(p.plain), L(p.problem), L(p.built), L(p.used), L(p.after), p.stack].join(' ') })),
       ...C.experience.map((e) => ({ kind: 'section', target: 'experience', icon: 'ic-case', label: stripTags(T(e.role)), sub: stripTags(T(e.org)), text: [stripTags(T(e.role)), stripTags(T(e.org)), ...e.points.map((x) => stripTags(L(x)))].join(' ') })),
       ...C.skills.map((g) => ({ kind: 'section', target: 'skills', icon: 'ic-chip', label: L(g.name), sub: L(g.desc), text: [L(g.name), L(g.desc), ...g.items.map(L)].join(' ') })),
     ];
@@ -140,7 +141,7 @@
         ${C.projects.map((p) => `
           <article class="proj" id="p-${p.slug}">
             <h3>${L(p.title)}</h3>
-            <div class="result-pill">${L(p.result)}</div>
+            <div class="result-pill">${L(p.result)}</div>${p.origin ? `<div class="origin-pill">${esc(L(p.origin).split('.')[0])}</div>` : ''}
             <p>${L(p.plain)}</p>
             <details class="tech"><summary>${ui('techDetails')}</summary>
               <dl>

@@ -113,6 +113,19 @@ test.describe('non-technical visitor (desktop)', () => {
     await expect(tickets.getByRole('link')).toHaveCount(0);
   });
 
+  test('Axoloom is marked as a personal venture, in both languages, and no work project is', async ({ page }) => {
+    await open(page, '?view=easy', '#projects');
+    const axoloom = page.locator('#p-axoloom');
+    await expect(axoloom.locator('.origin-pill')).toHaveText('Personal venture');
+    await axoloom.locator('summary').click();
+    await expect(axoloom).toContainText('outside any job I have had or have now');
+    await expect(axoloom).toContainText('No customers yet');
+    await expect(page.locator('.origin-pill')).toHaveCount(1);
+
+    await open(page, '?view=easy&lang=es', '#projects');
+    await expect(page.locator('#p-axoloom .origin-pill')).toHaveText('Emprendimiento propio');
+  });
+
   test('Easy view search treats typed text as text, never as HTML', async ({ page }) => {
     await open(page, '?view=easy');
     await page.locator('#easySearch').fill('<img src=x onerror=window.__pwned=1>');
